@@ -137,7 +137,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
       <div className="px-5 mb-4">
         <button
           onClick={() => setShowExerciseSelector(true)}
-          className="w-full h-14 bg-[#1C1C1E] rounded-xl flex items-center justify-between px-4 card-hover"
+          className="w-full h-14 rounded-2xl flex items-center justify-between px-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight btn-press hover:bg-white/15 transition-colors"
         >
           <span className={cn(
             'text-[17px]',
@@ -145,7 +145,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
           )}>
             {selectedExercise?.name || 'Sélectionner un exercice'}
           </span>
-          <ChevronDown size={20} className="text-[#8E8E93]" />
+          <ChevronDown size={20} className="text-white/60" />
         </button>
       </div>
       
@@ -156,12 +156,12 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
             <button
               key={filter.id}
               onClick={() => setTimeFilter(filter.id)}
-              className={cn(
-                'h-8 px-4 rounded-full text-[13px] font-medium transition-colors',
-                timeFilter === filter.id
-                  ? 'bg-[#D4FF90] text-black'
-                  : 'bg-[#2C2C2E] text-[#8E8E93]'
-              )}
+             className={cn(
+  'h-8 px-4 rounded-full text-[13px] font-medium transition-all duration-200 backdrop-blur-xl',
+  timeFilter === filter.id
+    ? 'bg-[#D4FF90]/90 text-black shadow-[0_10px_25px_rgba(212,255,144,0.18)]'
+    : 'bg-white/8 border border-white/10 text-white/60 hover:bg-white/15'
+)}
             >
               {filter.label}
             </button>
@@ -173,29 +173,30 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
         <>
           {/* Chart */}
           <div className="mx-5 mb-6">
-            <div className="bg-[#1C1C1E] rounded-2xl p-4">
+            <div className="rounded-2xl p-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.35)]">
               {/* Chart Type Toggle */}
               {!isCardio && (
                 <div className="flex gap-2 mb-4">
                   <button
                     onClick={() => setChartType('weight')}
                     className={cn(
-                      'h-8 px-3 rounded-lg text-[13px] font-medium transition-colors',
-                      chartType === 'weight'
-                        ? 'bg-[#2C2C2E] text-white'
-                        : 'text-[#8E8E93]'
-                    )}
+  'h-8 px-3 rounded-lg text-[13px] font-medium transition-all duration-200 backdrop-blur-xl',
+  chartType === 'weight'
+    ? 'bg-[#D4FF90]/90 text-black shadow-[0_10px_25px_rgba(212,255,144,0.18)]'
+    : 'bg-white/8 border border-white/10 text-white/60 hover:bg-white/15'
+)}
                   >
                     Charge
                   </button>
                   <button
                     onClick={() => setChartType('volume')}
                     className={cn(
-                      'h-8 px-3 rounded-lg text-[13px] font-medium transition-colors',
-                      chartType === 'volume'
-                        ? 'bg-[#2C2C2E] text-white'
-                        : 'text-[#8E8E93]'
-                    )}
+  'h-8 px-3 rounded-lg text-[13px] font-medium transition-all duration-200 backdrop-blur-xl',
+  chartType === 'volume'
+    ? 'bg-[#D4FF90]/90 text-black shadow-[0_10px_25px_rgba(212,255,144,0.18)]'
+    : 'bg-white/8 border border-white/10 text-white/60 hover:bg-white/15'
+)}
+
                   >
                     Volume
                   </button>
@@ -207,29 +208,35 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                 <ResponsiveContainer width="100%" height="100%">
                   {isCardio ? (
                     <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#38383A" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.10)" vertical={false} />
                       <XAxis 
-                        dataKey="date" 
-                        stroke="#8E8E93" 
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis 
-                        stroke="#8E8E93" 
-                        fontSize={11}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#2C2C2E', 
-                          border: 'none', 
-                          borderRadius: '8px',
-                          color: '#fff'
-                        }}
-                        itemStyle={{ color: '#D4FF90' }}
-                      />
+  dataKey="date" 
+  stroke="rgba(255,255,255,0.45)" 
+  fontSize={11}
+  tickLine={false}
+  axisLine={false}
+/>
+<YAxis 
+  stroke="rgba(255,255,255,0.45)" 
+  fontSize={11}
+  tickLine={false}
+  axisLine={false}
+/>
+                      <Tooltip
+  contentStyle={{
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: '12px',
+    color: '#fff',
+    boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
+  }}
+  labelStyle={{ color: 'rgba(255,255,255,0.70)' }}
+  itemStyle={{ color: '#D4FF90' }}
+  formatter={(value: number) => [`${value} min`, 'Durée']}
+/>
+
                       <Bar 
                         dataKey="duration" 
                         fill="#D4FF90" 
@@ -239,40 +246,44 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                     </BarChart>
                   ) : (
                     <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#38383A" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.10)" vertical={false} />
                       <XAxis 
                         dataKey="date" 
-                        stroke="#8E8E93" 
+                        stroke="rgba(255,255,255,0.45)" 
                         fontSize={11}
                         tickLine={false}
                         axisLine={false}
                       />
                       <YAxis 
-                        stroke="#8E8E93" 
+                        stroke="rgba(255,255,255,0.45)" 
                         fontSize={11}
                         tickLine={false}
                         axisLine={false}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#2C2C2E', 
-                          border: 'none', 
-                          borderRadius: '8px',
-                          color: '#fff'
-                        }}
-                        itemStyle={{ color: '#D4FF90' }}
-                        formatter={(value: number) => [
-                          `${value} ${chartType === 'weight' ? 'kg' : 'kg total'}`,
-                          chartType === 'weight' ? 'Charge' : 'Volume'
-                        ]}
-                      />
+                     <Tooltip
+  contentStyle={{
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: '12px',
+    color: '#fff',
+    boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
+  }}
+  labelStyle={{ color: 'rgba(255,255,255,0.70)' }}
+  itemStyle={{ color: '#D4FF90' }}
+  formatter={(value: number) => [
+    `${value} ${chartType === 'weight' ? 'kg' : 'kg total'}`,
+    chartType === 'weight' ? 'Charge' : 'Volume'
+  ]}
+/>
                       <Line 
                         type="monotone" 
                         dataKey={chartType}
                         stroke="#D4FF90" 
                         strokeWidth={3}
-                        dot={{ fill: '#D4FF90', strokeWidth: 0, r: 4 }}
-                        activeDot={{ r: 6, fill: '#D4FF90' }}
+                        dot={{ fill: '#D4FF90', stroke: 'rgba(0,0,0,0)', r: 3 }}
+activeDot={{ r: 5, fill: '#D4FF90' }}
                       />
                     </LineChart>
                   )}
@@ -286,7 +297,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
             <div className="grid grid-cols-3 gap-3">
               {isCardio ? (
                 <>
-                  <div className="bg-[#1C1C1E] rounded-2xl p-4">
+                  <div className="rounded-2xl p-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Activity size={14} className="text-[#D4FF90]" />
                       <span className="text-[11px] text-[#8E8E93]">Sessions</span>
@@ -295,7 +306,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                       {stats.workoutCount}
                     </p>
                   </div>
-                  <div className="bg-[#1C1C1E] rounded-2xl p-4">
+                  <div className="rounded-2xl p-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="flex items-center gap-1.5 mb-2">
                       <TrendingUp size={14} className="text-[#32D74B]" />
                       <span className="text-[11px] text-[#8E8E93]">Total</span>
@@ -305,7 +316,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                     </p>
                     <p className="text-[10px] text-[#8E8E93]">minutes</p>
                   </div>
-                  <div className="bg-[#1C1C1E] rounded-2xl p-4">
+                  <div className="rounded-2xl p-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="flex items-center gap-1.5 mb-2">
                       <BarChart3 size={14} className="text-[#FF9F0A]" />
                       <span className="text-[11px] text-[#8E8E93]">Moyenne</span>
@@ -318,7 +329,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                 </>
               ) : (
                 <>
-                  <div className="bg-[#1C1C1E] rounded-2xl p-4">
+                  <div className="rounded-2xl p-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Trophy size={14} className="text-[#D4FF90]" />
                       <span className="text-[11px] text-[#8E8E93]">Max</span>
@@ -328,7 +339,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                     </p>
                     <p className="text-[10px] text-[#8E8E93]">kg</p>
                   </div>
-                  <div className="bg-[#1C1C1E] rounded-2xl p-4">
+                  <div className="rounded-2xl p-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="flex items-center gap-1.5 mb-2">
                       <BarChart3 size={14} className="text-[#32D74B]" />
                       <span className="text-[11px] text-[#8E8E93]">Volume</span>
@@ -338,7 +349,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                     </p>
                     <p className="text-[10px] text-[#8E8E93]">kg total</p>
                   </div>
-                  <div className="bg-[#1C1C1E] rounded-2xl p-4">
+                  <div className="rounded-2xl p-4 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
                     <div className="flex items-center gap-1.5 mb-2">
                       <TrendingUp size={14} className="text-[#FF9F0A]" />
                       <span className="text-[11px] text-[#8E8E93]">Records</span>
@@ -356,7 +367,7 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
       ) : selectedExercise ? (
         // Empty state
         <div className="mx-5 mt-8">
-          <div className="bg-[#1C1C1E] rounded-2xl p-8 text-center">
+          <div className="rounded-2xl p-8 text-center bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_14px_40px_rgba(0,0,0,0.35)]">
             <div className="w-16 h-16 bg-[#2C2C2E] rounded-full flex items-center justify-center mx-auto mb-4">
               <BarChart3 size={28} className="text-[#8E8E93]" />
             </div>
@@ -372,20 +383,20 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
       
       {/* Exercise Selector Modal */}
       <Dialog open={showExerciseSelector} onOpenChange={setShowExerciseSelector}>
-        <DialogContent className="bg-[#1C1C1E] border-[#38383A] text-white max-w-sm max-h-[80vh] overflow-y-auto">
+      <DialogContent className="!fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2 -mt-6 text-white max-w-sm w-[calc(100%-32px)] max-h-[80vh] bg-white/10 backdrop-blur-2xl border border-white/10 glass-elevated glass-highlight shadow-[0_18px_60px_rgba(0,0,0,0.55)]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               Choisir un exercice
             </DialogTitle>
           </DialogHeader>
           
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {Object.entries(groupedExercises).map(([category, categoryExercises]) => (
               <div key={category}>
-                <h3 className="text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide mb-2 px-1">
+                <h3 className="text-[13px] font-medium text-white/50 uppercase tracking-wide mb-2 px-1">
                   {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS]}
                 </h3>
-                <div className="bg-[#2C2C2E] rounded-xl overflow-hidden">
+                <div className="rounded-xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/10">
                   {categoryExercises.map((exercise, index) => (
                     <button
                       key={exercise.id}
@@ -394,8 +405,8 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
                         setShowExerciseSelector(false);
                       }}
                       className={cn(
-                        'w-full text-left p-4 text-[17px] text-white card-hover',
-                        index !== categoryExercises.length - 1 && 'border-b border-[#38383A]'
+                        'w-full text-left p-4 text-[17px] text-white/90 btn-press transition-colors hover:bg-white/5 active:bg-white/10',
+                        index !== categoryExercises.length - 1 && 'border-b border-white/10'
                       )}
                     >
                       {exercise.name}

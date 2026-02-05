@@ -99,7 +99,7 @@ export function ExercisesPage({ exercises, performances, onAddExercise, onAddPer
   const isCardio = selectedExercise?.category === 'cardio';
   
   return (
-    <div className="page-enter pb-24">
+    <div className="page-enter pb-[160px]">
       {/* Header */}
       <header className="px-5 pt-6 pb-4">
         <h1 className="text-[34px] font-bold text-white leading-tight">
@@ -111,25 +111,30 @@ export function ExercisesPage({ exercises, performances, onAddExercise, onAddPer
       </header>
       
       {/* Search Bar */}
-      <div className="px-5 mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8E8E93]" size={20} />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher un exercice..."
-            className="h-11 pl-10 pr-10 bg-[#1C1C1E] border-0 rounded-xl text-white placeholder:text-[#636366] focus-visible:ring-[#D4FF90]"
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <X size={18} className="text-[#8E8E93]" />
-            </button>
-          )}
-        </div>
-      </div>
+<div className="px-5 mb-4">
+  <div className="relative">
+
+
+    <Input
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Rechercher un exercice..."
+      className="h-11 pl-12 pr-12 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder:text-white/40 focus-visible:ring-[#D4FF90]"
+    />
+
+    {/* Bouton clear glass */}
+    {searchQuery && (
+      <button
+        onClick={() => setSearchQuery('')}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight btn-press hover:bg-white/15 transition-colors"
+      >
+        <X size={16} className="text-white/70" />
+      </button>
+    )}
+
+  </div>
+</div>
+
       
       {/* Exercise List */}
       <div className="px-5 stagger-children">
@@ -138,7 +143,7 @@ export function ExercisesPage({ exercises, performances, onAddExercise, onAddPer
             <h2 className="text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide mb-2 px-1">
               {CATEGORY_LABELS[category as ExerciseCategory]}
             </h2>
-            <div className="bg-[#1C1C1E] rounded-2xl overflow-hidden">
+            <div className="rounded-2xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight">
               {categoryExercises.map((exercise, index) => {
                 const lastPerf = getLastPerformance(exercise.id);
                 return (
@@ -146,8 +151,8 @@ export function ExercisesPage({ exercises, performances, onAddExercise, onAddPer
                     key={exercise.id}
                     onClick={() => handleExerciseClick(exercise)}
                     className={cn(
-                      'w-full flex items-center justify-between p-4 text-left card-hover',
-                      index !== categoryExercises.length - 1 && 'border-b border-[#38383A]'
+                      'w-full flex items-center justify-between p-4 text-left btn-press transition-colors hover:bg-white/5 active:bg-white/10',
+                      index !== categoryExercises.length - 1 && 'border-b border-white/10'
                     )}
                   >
                     <div className="flex-1">
@@ -163,7 +168,7 @@ export function ExercisesPage({ exercises, performances, onAddExercise, onAddPer
                         </p>
                       )}
                     </div>
-                    <ChevronRight size={20} className="text-[#8E8E93]" />
+                    <ChevronRight size={20} className="text-white/40" />
                   </button>
                 );
               })}
@@ -173,15 +178,17 @@ export function ExercisesPage({ exercises, performances, onAddExercise, onAddPer
       </div>
       
       {/* Add Exercise Button */}
-      <div className="fixed bottom-[83px] left-0 right-0 px-5">
-        <Button
-          onClick={() => setShowAddExercise(true)}
-          className="w-full h-14 rounded-xl font-semibold text-[17px] bg-[#1C1C1E] text-white hover:bg-[#2C2C2E] btn-press border border-[#38383A]"
-        >
-          <Plus size={24} className="mr-2" />
-          Ajouter un exercice
-        </Button>
-      </div>
+<div className="fixed bottom-[110px] left-0 right-0 px-5 z-50">
+
+  <Button
+    onClick={() => setShowAddExercise(true)}
+    className="w-full h-15 rounded-2xl font-semibold text-[17px] text-white bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.4)] btn-press hover:bg-white/15 transition-colors"
+  >
+    <Plus size={22} className="mr-2 text-[#D4FF90]" />
+    Ajouter un exercice
+  </Button>
+</div>
+
       
       {/* Exercise Detail Modal */}
       <Dialog open={!!selectedExercise} onOpenChange={() => setSelectedExercise(null)}>

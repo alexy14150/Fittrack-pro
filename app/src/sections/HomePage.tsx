@@ -13,10 +13,26 @@ interface HomePageProps {
 export function HomePage({ sessions, onAddSession }: HomePageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showSuccess, setShowSuccess] = useState(false);
-  
+  const [todayFocus, setTodayFocus] = useState<'push' | 'pull' | 'legs' | null>(null);
+
   const today = new Date();
   const todayStr = format(today, 'yyyy-MM-dd');
-  
+
+  const dailyQuotes = [
+    "Régularité + intensité",
+    "Une séance vaut mieux que zéro",
+    "La discipline bat la motivation",
+    "Chaque jour compte",
+    "Le progrès se construit en silence",
+    "Petit effort, grand impact",
+    "Tu n’as pas besoin d’être motivé, juste constant",
+    "Aujourd’hui construit demain",
+    "Fais-le pour toi",
+    "Le plus dur, c’est de commencer"
+  ];
+
+  const todayQuote = dailyQuotes[today.getDate() % dailyQuotes.length];
+
   // Vérifier si une séance existe aujourd'hui
   const hasSessionToday = useMemo(() => {
     return sessions.some(s => s.date === todayStr);
@@ -110,61 +126,127 @@ export function HomePage({ sessions, onAddSession }: HomePageProps) {
   
   return (
     <div className="page-enter pb-24">
-      {/* Header */}
-      <header className="px-5 pt-6 pb-4">
-        <h1 className="text-[34px] font-bold text-white leading-tight">
-          {format(currentDate, 'MMMM yyyy', { locale: fr })}
-        </h1>
-        <p className="text-[15px] text-[#8E8E93] mt-1">
-          Suivez votre régularité d'entraînement
-        </p>
-      </header>
-      
+    
+  
       {/* Stats Cards */}
-      <div className="flex gap-3 px-5 mb-6 overflow-x-auto hide-scrollbar">
-        <div className="flex-shrink-0 bg-[#1C1C1E] rounded-2xl p-4 min-w-[140px]">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar size={18} className="text-[#D4FF90]" />
-            <span className="text-[13px] text-[#8E8E93]">Ce mois</span>
-          </div>
-          <p className="text-[28px] font-bold text-white font-mono">
-            {sessionsThisMonth}
-          </p>
-          <p className="text-[11px] text-[#8E8E93]">séances</p>
-        </div>
-        
-        <div className="flex-shrink-0 bg-[#1C1C1E] rounded-2xl p-4 min-w-[140px]">
-          <div className="flex items-center gap-2 mb-2">
-            <Flame size={18} className="text-[#FF9F0A]" />
-            <span className="text-[13px] text-[#8E8E93]">Streak</span>
-          </div>
-          <p className="text-[28px] font-bold text-white font-mono">
-            {streak}
-          </p>
-          <p className="text-[11px] text-[#8E8E93]">jours consécutifs</p>
-        </div>
-      </div>
-      
+<div className="flex gap-1 px-2 mb-10 overflow-x-auto hide-scrollbar">
+
+  {/* Ce mois */}
+  <div className="flex-shrink-0 rounded-2xl p-4 min-w-[140px] bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight">
+    <div className="flex items-center gap-2 mb-2">
+      <Calendar size={18} className="text-[#D4FF90]" />
+      <span className="text-[13px] text-[#8E8E93]">Ce mois</span>
+    </div>
+    <p className="text-[28px] font-bold text-white font-mono">
+      {sessionsThisMonth}
+    </p>
+    <p className="text-[11px] text-[#8E8E93]">séances</p>
+  </div>
+
+  {/* Séance du jour (au milieu) */}
+  <div className="flex-shrink-0 rounded-2xl p-4 min-w-[140px] bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight">
+    <div className="flex items-center gap-2 mb-2">
+      <Check size={18} className="text-[#D4FF90]" />
+      <span className="text-[13px] text-[#8E8E93]">Séance</span>
+    </div>
+
+    <div className="flex gap-2">
+      <button
+        onClick={() => setTodayFocus('push')}
+        className={cn(
+          "flex-1 py-1.5 rounded-lg border btn-press transition-colors text-[12px]",
+          todayFocus === 'push'
+            ? "bg-[#D4FF90]/25 border-[#D4FF90]/40 text-[#D4FF90]"
+            : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
+        )}
+      >
+        Push
+      </button>
+
+      <button
+        onClick={() => setTodayFocus('pull')}
+        className={cn(
+          "flex-1 py-1.5 rounded-lg border btn-press transition-colors text-[12px]",
+          todayFocus === 'pull'
+            ? "bg-[#D4FF90]/25 border-[#D4FF90]/40 text-[#D4FF90]"
+            : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
+        )}
+      >
+        Pull
+      </button>
+
+      <button
+        onClick={() => setTodayFocus('legs')}
+        className={cn(
+          "flex-1 py-1.5 rounded-lg border btn-press transition-colors text-[12px]",
+          todayFocus === 'legs'
+            ? "bg-[#D4FF90]/25 border-[#D4FF90]/40 text-[#D4FF90]"
+            : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
+        )}
+      >
+        Legs
+      </button>
+    </div>
+
+    <p className="text-[11px] text-[#8E8E93] mt-2">
+      {todayFocus === 'push' && 'Pecs • Épaules • Triceps'}
+      {todayFocus === 'pull' && 'Dos • Biceps'}
+      {todayFocus === 'legs' && 'Jambes'}
+      {!todayFocus && 'Choisis'}
+    </p>
+  </div>
+
+
+  {/* Streak */}
+  <div className="flex-shrink-0 rounded-2xl p-4 min-w-[140px] bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight">
+    <div className="flex items-center gap-2 mb-2">
+      <Flame size={18} className="text-[#FF9F0A]" />
+      <span className="text-[13px] text-[#8E8E93]">Streak</span>
+    </div>
+    <p className="text-[28px] font-bold text-white font-mono">
+      {streak}
+    </p>
+    <p className="text-[11px] text-[#8E8E93]">jours consécutifs</p>
+  </div>
+
+</div>
+{/* Motivation du jour */}
+<div className="mx-10 my-6">
+  <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+  <p className="text-center text-[13px] text-white/60 mt-3 italic tracking-wide animate-fade-in">
+    “{todayQuote}”
+  </p>
+</div>
+
+
+      <div className="h-2" />
+
       {/* Calendar */}
-      <div className="mx-5 bg-[#1C1C1E] rounded-2xl p-4">
+      <div className="mx-5 rounded-2xl p-3 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight">
         {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-4">
-          <button 
-            onClick={handlePrevMonth}
-            className="p-2 rounded-full hover:bg-[#2C2C2E] transition-colors btn-press"
-          >
-            <ChevronLeft size={20} className="text-white" />
-          </button>
-          <span className="text-[17px] font-semibold text-white capitalize">
-            {format(currentDate, 'MMMM yyyy', { locale: fr })}
-          </span>
-          <button 
-            onClick={handleNextMonth}
-            className="p-2 rounded-full hover:bg-[#2C2C2E] transition-colors btn-press"
-          >
-            <ChevronRight size={20} className="text-white" />
-          </button>
-        </div>
+<div className="flex items-center justify-between mb-4">
+  <button
+    onClick={handlePrevMonth}
+    className="p-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl glass-elevated btn-press hover:bg-white/10 transition-colors"
+    aria-label="Mois précédent"
+  >
+    <ChevronLeft size={20} className="text-white" />
+  </button>
+
+  <div className="px-4 py-2 rounded-2xl bg-white/8 border border-white/10 backdrop-blur-xl glass-elevated glass-highlight">
+    <span className="text-[15px] font-semibold text-white capitalize tracking-wide">
+      {format(currentDate, 'MMMM yyyy', { locale: fr })}
+    </span>
+  </div>
+
+  <button
+    onClick={handleNextMonth}
+    className="p-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl glass-elevated btn-press hover:bg-white/10 transition-colors"
+    aria-label="Mois suivant"
+  >
+    <ChevronRight size={20} className="text-white" />
+  </button>
+</div>
         
         {/* Week Days */}
         <div className="grid grid-cols-7 mb-2">
@@ -212,10 +294,10 @@ export function HomePage({ sessions, onAddSession }: HomePageProps) {
           onClick={handleSessionComplete}
           disabled={hasSessionToday}
           className={cn(
-            'w-full h-14 rounded-xl font-semibold text-[17px] btn-press transition-all duration-300',
+            'w-full h-14 rounded-2xl font-semibold text-[17px] btn-press transition-all duration-300 backdrop-blur-xl bg-opacity-80 border border-white/10 shadow-lg glass-elevated glass-highlight',
             hasSessionToday 
               ? 'bg-[#2C2C2E] text-[#636366] cursor-not-allowed'
-              : 'bg-[#D4FF90] text-black hover:bg-[#c5f082]'
+              : 'bg-[#D4FF90]/80 text-black hover:bg-[#D4FF90]/90'
           )}
         >
           {showSuccess ? (
