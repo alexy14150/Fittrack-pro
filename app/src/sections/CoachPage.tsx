@@ -265,19 +265,17 @@ const challengeBonus = challengeDone ? 5 : 0;
     <p className="text-[13px] text-[#D4FF90] font-medium">
       Récompense : {coach.challengeReward}
     </p>
-
-    {/* Bouton */}
-    <button
-      onClick={() => setChallengeDone(!challengeDone)}
-      className={`mt-4 w-full h-11 rounded-2xl font-semibold text-[14px] transition-all duration-300 ${
-        challengeDone
-          ? "bg-[#32D74B] text-black"
-          : "bg-[#D4FF90] text-black hover:scale-[1.02]"
-      }`}
-    >
-      {challengeDone ? "Défi validé ✅" : "Valider le défi"}
-    </button>
-
+<button
+  onClick={validateChallenge}
+  disabled={challengeDone}
+  className={`mt-4 w-full py-2 rounded-xl font-medium transition-all duration-150 ${
+    challengeDone
+      ? "bg-white/10 text-white/40 cursor-not-allowed"
+      : "bg-[#D4FF90] text-black hover:scale-[1.02]"
+  }`}
+>
+  {challengeDone ? "Défi validé ✅" : "Valider le défi"}
+</button>
   </div>
 </div>
 
