@@ -1,7 +1,7 @@
-import { Home, Dumbbell, TrendingUp, Settings } from 'lucide-react';
+import { Home, Dumbbell, TrendingUp, Settings, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type Tab = 'home' | 'exercises' | 'progress' | 'settings';
+type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 interface BottomNavProps {
   activeTab: Tab;
@@ -12,6 +12,7 @@ const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'Accueil', icon: Home },
   { id: 'exercises', label: 'Exercices', icon: Dumbbell },
   { id: 'progress', label: 'Progression', icon: TrendingUp },
+  { id: 'coach', label: 'Coach', icon: Brain },
   { id: 'settings', label: 'Réglages', icon: Settings },
 ];
 

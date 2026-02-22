@@ -77,35 +77,108 @@ export function ProgressPage({ exercises, performances }: ProgressPageProps) {
     }));
   }, [exercisePerformances]);
   
+  const projection = useMemo(() => {
+  if (exercisePerformances.length < 3) return null;
+
+  const weights = exercisePerformances.map(p => p.weight || 0);
+  const first = weights[0];
+  const last = weights[weights.length - 1];
+
+  const delta = last - first;
+  const weeks = exercisePerformances.length / 2; // approx
+  const weeklyProgress = delta / weeks;
+
+  if (weeklyProgress <= 0) return null;
+
+  const target = last + 10; // +10kg projection
+  const weeksToTarget = Math.ceil((target - last) / weeklyProgress);
+
+  return {
+    weeklyProgress: weeklyProgress.toFixed(2),
+    target,
+    weeksToTarget,
+  };
+}, [exercisePerformances]);
   // Calculate stats
-  const stats = useMemo(() => {
-    if (exercisePerformances.length === 0) {
-      return { maxWeight: 0, totalVolume: 0, prCount: 0, workoutCount: 0 };
+const stats = useMemo(() => {
+  if (exercisePerformances.length === 0) {
+    return { maxWeight: 0, totalVolume: 0, prCount: 0, workoutCount: 0 };
+  }
+
+  const maxWeight = Math.max(...exercisePerformances.map(p => p.weight || 0));
+  const totalVolume = exercisePerformances.reduce((sum, p) => {
+    return sum + ((p.weight || 0) * (p.sets || 1) * (p.reps || 1));
+  }, 0);
+
+  // Count PRs (personal records)
+  let prCount = 0;
+  let currentMax = 0;
+  exercisePerformances.forEach(p => {
+    const weight = p.weight || 0;
+    if (weight > currentMax) {
+      currentMax = weight;
+      prCount++;
     }
-    
-    const maxWeight = Math.max(...exercisePerformances.map(p => p.weight || 0));
-    const totalVolume = exercisePerformances.reduce((sum, p) => {
-      return sum + ((p.weight || 0) * (p.sets || 1) * (p.reps || 1));
-    }, 0);
-    
-    // Count PRs (personal records)
-    let prCount = 0;
-    let currentMax = 0;
-    exercisePerformances.forEach(p => {
-      const weight = p.weight || 0;
-      if (weight > currentMax) {
-        currentMax = weight;
-        prCount++;
-      }
-    });
-    
-    return { 
-      maxWeight, 
-      totalVolume, 
-      prCount,
-      workoutCount: exercisePerformances.length 
+  });
+
+  return {
+    maxWeight,
+    totalVolume,
+    prCount,
+    workoutCount: exercisePerformances.length,
+  };
+}, [exercisePerformances]);
+
+// Analyse intelligente (à mettre JUSTE ici, pas dans stats)
+const insights = useMemo(() => {
+  if (!selectedExercise || exercisePerformances.length < 2) {
+    return {
+      trendLabel: "Pas assez de données",
+      trendDetail: "Ajoute au moins 2 séances pour voir une analyse.",
+      last7Count: 0,
+      advice: "Enregistre tes séances pour débloquer les insights.",
     };
-  }, [exercisePerformances]);
+  }
+
+  const first = exercisePerformances[0];
+  const last = exercisePerformances[exercisePerformances.length - 1];
+
+  const firstW = first.weight || 0;
+  const lastW = last.weight || 0;
+  const deltaWeight = lastW - firstW;
+
+  const last3 = exercisePerformances.slice(-3).map(p => p.weight || 0);
+  const isStagnating =
+    last3.length === 3 && last3[0] === last3[1] && last3[1] === last3[2];
+
+  let trendLabel = "En progression";
+  let trendDetail =
+    deltaWeight >= 0 ? `+${deltaWeight} kg sur la période` : `${deltaWeight} kg sur la période`;
+
+  if (isStagnating) {
+    trendLabel = "Stagnation détectée";
+    trendDetail = "3 dernières séances au même poids";
+  } else if (deltaWeight < 0) {
+    trendLabel = "En baisse";
+    trendDetail = `${deltaWeight} kg sur la période`;
+  }
+
+  const now = new Date();
+  const last7Count = exercisePerformances.filter(p => {
+    const d = parseISO(p.date);
+    const diffDays = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 7;
+  }).length;
+
+  const advice = isStagnating
+    ? "Astuce : change le rep-range (ex: 8-10) ou ajoute 1 série pendant 2 semaines."
+    : deltaWeight > 0
+      ? "Continue : essaie +2,5 kg quand tu valides tes reps."
+      : "Repars propre : garde le même poids et vise +1 rep par série.";
+
+  return { trendLabel, trendDetail, last7Count, advice };
+}, [selectedExercise, exercisePerformances]);
+
   
   // Group exercises by category for selector
   const groupedExercises = useMemo(() => {
@@ -358,13 +431,38 @@ activeDot={{ r: 5, fill: '#D4FF90' }}
                       {stats.prCount}
                     </p>
                     <p className="text-[10px] text-[#8E8E93]">PRs</p>
+                    
                   </div>
                 </>
               )}
             </div>
           </div>
+          {/* Analyse intelligente */}
+<div className="px-5 mt-6">
+  <div className="rounded-2xl p-5 bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
+    <p className="text-[13px] text-[#8E8E93] mb-2 uppercase tracking-wide">
+      Analyse intelligente
+    </p>
+
+    <p className="text-[18px] font-semibold text-white mb-1">
+      {insights.trendLabel}
+    </p>
+
+    <p className="text-[14px] text-[#8E8E93] mb-3">
+      {insights.trendDetail}
+    </p>
+
+    <div className="h-px bg-white/10 my-3" />
+
+    <p className="text-[14px] text-[#D4FF90] font-medium">
+      {insights.advice}
+    </p>
+  </div>
+</div>
         </>
+        
       ) : selectedExercise ? (
+        
         // Empty state
         <div className="mx-5 mt-8">
           <div className="rounded-2xl p-8 text-center bg-white/10 backdrop-blur-xl border border-white/10 glass-elevated glass-highlight shadow-[0_14px_40px_rgba(0,0,0,0.35)]">

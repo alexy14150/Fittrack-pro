@@ -3,11 +3,12 @@ import { BottomNav } from '@/components/BottomNav';
 import { HomePage } from '@/sections/HomePage';
 import { ExercisesPage } from '@/sections/ExercisesPage';
 import { ProgressPage } from '@/sections/ProgressPage';
+import { CoachPage } from '@/sections/CoachPage';
 import { SettingsPage } from '@/sections/SettingsPage';
 import { useUser, useSessions, useExercises, usePerformances } from '@/hooks/useStorage';
 import type { ExerciseCategory } from '@/types';
 
-type Tab = 'home' | 'exercises' | 'progress' | 'settings';
+type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -61,6 +62,13 @@ function App() {
             onClearData={handleClearData}
           />
         );
+        case 'coach':
+  return (
+    <CoachPage
+      sessions={sessions}
+      performances={performances}
+    />
+  );
       default:
         return null;
     }
