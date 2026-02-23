@@ -1,18 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BottomNav } from '@/components/BottomNav';
+
 import { HomePage } from '@/sections/HomePage';
 import { ExercisesPage } from '@/sections/ExercisesPage';
 import { ProgressPage } from '@/sections/ProgressPage';
 import { CoachPage } from '@/sections/CoachPage';
 import { SettingsPage } from '@/sections/SettingsPage';
-import { useUser, useSessions, useExercises, usePerformances } from '@/hooks/useStorage';
-import type { ExerciseCategory } from '@/types';
+
+import { useUser, useSessions, useExercises, usePerformances } from "@/hooks/useStorage";
+import type { ExerciseCategory } from "@/types";
+
+import { auth } from "@/lib/firebase";
+import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  
+  useEffect(() => {
+  const unsub = onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      signInAnonymously(auth).catch(console.error);
+    }
+  });
+
+  return () => unsub();
+}, []);
   // Data hooks
   const { user, createUser, updateUser, deleteUser } = useUser();
   const { sessions, addSession } = useSessions();
