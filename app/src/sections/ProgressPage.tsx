@@ -128,7 +128,17 @@ const stats = useMemo(() => {
     workoutCount: exercisePerformances.length,
   };
 }, [exercisePerformances]);
-
+{projection && (
+  <div className="mt-4 rounded-2xl p-4 bg-white/10 border border-white/10">
+    <p className="text-[13px] text-white/60 uppercase tracking-wide">Projection</p>
+    <p className="text-[16px] text-white mt-2">
+      +10 kg estimé : <span className="text-[#D4FF90] font-semibold">{projection.weeksToTarget}</span> semaines
+    </p>
+    <p className="text-[12px] text-white/50 mt-1">
+      Progression hebdo ~ {projection.weeklyProgress} kg
+    </p>
+  </div>
+)}
 // Analyse intelligente (à mettre JUSTE ici, pas dans stats)
 const insights = useMemo(() => {
   if (!selectedExercise || exercisePerformances.length < 2) {

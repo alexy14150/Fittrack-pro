@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, ChevronRight, X, Clock, Weight, Activity } from 'lucide-react';
+import { Plus, ChevronRight, X, Clock, Weight, Activity } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
