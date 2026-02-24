@@ -12,20 +12,28 @@ import type { ExerciseCategory } from "@/types";
 
 import { auth } from "@/lib/firebase";
 import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   useEffect(() => {
-  const unsub = onAuthStateChanged(auth, (user) => {
+  const unsub = onAuthStateChanged(auth, async (user) => {
     if (!user) {
-      signInAnonymously(auth).catch(console.error);
+      await signInAnonymously(auth);
+    } else {
+      // 🔥 Test Firestore write
+      await setDoc(doc(db, "users", user.uid), {
+        createdAt: new Date(),
+      });
     }
   });
 
   return () => unsub();
 }, []);
+
   // Data hooks
   const { user, createUser, updateUser, deleteUser } = useUser();
   const { sessions, addSession } = useSessions();
