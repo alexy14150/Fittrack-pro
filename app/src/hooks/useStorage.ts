@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import type { User, Session, Exercise, Performance } from "@/types";
 import { DEFAULT_EXERCISES } from "@/types";
 import { db, auth } from "@/lib/firebase";
@@ -12,7 +12,6 @@ import {
   query,
   orderBy,
   serverTimestamp,
-  getDoc,
 } from "firebase/firestore";
 
 /**
