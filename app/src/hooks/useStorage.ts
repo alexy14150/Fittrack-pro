@@ -1,139 +1,341 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { User, Session, Exercise, Performance } from '@/types';
-import { DEFAULT_EXERCISES } from '@/types';
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import type { User, Session, Exercise, Performance } from "@/types";
+import { DEFAULT_EXERCISES } from "@/types";
+import { db, auth } from "@/lib/firebase";
 
-// Clés de stockage
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp,
+  getDoc,
+} from "firebase/firestore";
+
+/**
+ * LocalStorage keys (cache local)
+ */
 const STORAGE_KEYS = {
-  USER: 'fittrack_user',
-  SESSIONS: 'fittrack_sessions',
-  EXERCISES: 'fittrack_exercises',
-  PERFORMANCES: 'fittrack_performances',
+  USER: "fittrack_user",
+  SESSIONS: "fittrack_sessions",
+  EXERCISES: "fittrack_exercises",
+  PERFORMANCES: "fittrack_performances",
 };
 
-// Hook générique pour le localStorage
-function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((prev: T) => T)) => void] {
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
-      return initialValue;
-    }
-  });
+function safeGetLocal<T>(key: string, fallback: T): T {
+  try {
+    const item = window.localStorage.getItem(key);
+    return item ? (JSON.parse(item) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-  const setValue = useCallback((value: T | ((prev: T) => T)) => {
-    try {
-      setStoredValue(prev => {
+function safeSetLocal<T>(key: string, value: T) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
+
+function safeRemoveLocal(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * 🔥 UID hook (écoute Firebase Auth)
+ * -> renvoie uid quand l'utilisateur anonyme est connecté
+ */
+function useFirebaseUid(): string | null {
+  const [uid, setUid] = useState<string | null>(() => auth.currentUser?.uid ?? null);
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged((u) => {
+      setUid(u?.uid ?? null);
+    });
+    return () => unsub();
+  }, []);
+
+  return uid;
+}
+
+/**
+ * Hook générique localStorage (cache)
+ */
+function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T | ((prev: T) => T)) => void] {
+  const [storedValue, setStoredValue] = useState<T>(() => safeGetLocal<T>(key, initialValue));
+
+  const setValue = useCallback(
+    (value: T | ((prev: T) => T)) => {
+      setStoredValue((prev) => {
         const valueToStore = value instanceof Function ? value(prev) : value;
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        safeSetLocal(key, valueToStore);
         return valueToStore;
       });
-    } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
-    }
-  }, [key]);
+    },
+    [key]
+  );
 
   return [storedValue, setValue];
 }
 
-// Hook pour l'utilisateur
-export function useUser() {
-  const [user, setUser] = useLocalStorage<User | null>(STORAGE_KEYS.USER, null);
-
-  const createUser = useCallback((name: string, email: string) => {
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      createdAt: new Date().toISOString(),
-    };
-    setUser(newUser);
-    return newUser;
-  }, [setUser]);
-
-  const updateUser = useCallback((updates: Partial<User>) => {
-    setUser(prev => prev ? { ...prev, ...updates } : null);
-  }, [setUser]);
-
-  const deleteUser = useCallback(() => {
-    setUser(null);
-    Object.values(STORAGE_KEYS).forEach(key => {
-      window.localStorage.removeItem(key);
-    });
-  }, [setUser]);
-
-  return { user, createUser, updateUser, deleteUser };
+/**
+ * Helpers Firestore paths
+ */
+function userDocRef(uid: string) {
+  return doc(db, "users", uid);
+}
+function sessionsCol(uid: string) {
+  return collection(db, "users", uid, "sessions");
+}
+function exercisesCol(uid: string) {
+  return collection(db, "users", uid, "exercises");
+}
+function performancesCol(uid: string) {
+  return collection(db, "users", uid, "performances");
 }
 
-// Hook pour les séances
+/**
+ * ==============
+ * ✅ USER
+ * ==============
+ */
+export function useUser() {
+  const uid = useFirebaseUid();
+  const [user, setUser] = useLocalStorage<User | null>(STORAGE_KEYS.USER, null);
+
+  // Sync down from Firestore user doc
+  useEffect(() => {
+    if (!uid) return;
+
+    const ref = userDocRef(uid);
+    const unsub = onSnapshot(ref, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data() as any;
+
+      const u: User = {
+        id: uid, // on utilise uid comme id
+        name: data.name ?? "Anonyme",
+        email: data.email ?? "",
+        createdAt: data.createdAt ?? new Date().toISOString(),
+      };
+
+      setUser(u);
+    });
+
+    return () => unsub();
+  }, [uid, setUser]);
+
+  const createUser = useCallback(
+    async (name: string, email: string) => {
+      if (!uid) {
+        // pas encore connecté -> on met en cache, Firestore suivra une fois uid dispo
+        const localUser: User = {
+          id: crypto.randomUUID(),
+          name,
+          email,
+          createdAt: new Date().toISOString(),
+        };
+        setUser(localUser);
+        return localUser;
+      }
+
+      const newUser: User = {
+        id: uid,
+        name,
+        email,
+        createdAt: new Date().toISOString(),
+      };
+
+      await setDoc(
+        userDocRef(uid),
+        {
+          name,
+          email,
+          createdAt: newUser.createdAt,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      setUser(newUser);
+      return newUser;
+    },
+    [uid, setUser]
+  );
+
+  const updateUser = useCallback(
+    async (updates: Partial<User>) => {
+      setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+
+      if (!uid) return;
+
+      await setDoc(
+        userDocRef(uid),
+        {
+          ...updates,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    },
+    [uid, setUser]
+  );
+
+  const deleteUser = useCallback(async () => {
+    setUser(null);
+    Object.values(STORAGE_KEYS).forEach(safeRemoveLocal);
+
+    // En général on ne supprime pas auth user (anonyme) côté client
+    // et on ne supprime pas toutes les collections ici (ça demande règles/admin).
+    // Donc on laisse "soft delete" côté app.
+    if (uid) {
+      await setDoc(userDocRef(uid), { deleted: true, updatedAt: serverTimestamp() }, { merge: true });
+    }
+  }, [uid, setUser]);
+
+  return { user, createUser, updateUser, deleteUser, uid };
+}
+
+/**
+ * ==============
+ * ✅ SESSIONS
+ * ==============
+ */
 export function useSessions() {
+  const uid = useFirebaseUid();
   const [sessions, setSessions] = useLocalStorage<Session[]>(STORAGE_KEYS.SESSIONS, []);
 
-  const addSession = useCallback((date: string) => {
-    const newSession: Session = {
-      id: crypto.randomUUID(),
-      date,
-      completed: true,
-      userId: 'current',
-    };
-    setSessions(prev => [...prev, newSession]);
-    return newSession;
-  }, [setSessions]);
+  // éviter d’écraser le cache local par un snapshot vide au tout début
+  const hasSyncedOnce = useRef(false);
 
-  const removeSession = useCallback((id: string) => {
-    setSessions(prev => prev.filter(s => s.id !== id));
-  }, [setSessions]);
+  useEffect(() => {
+    if (!uid) return;
 
-  const hasSessionOnDate = useCallback((date: string) => {
-    return sessions.some(s => s.date === date);
-  }, [sessions]);
+    const q = query(sessionsCol(uid), orderBy("date", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const remote: Session[] = snap.docs.map((d) => {
+        const data = d.data() as any;
+        return {
+          id: d.id,
+          date: data.date,
+          completed: !!data.completed,
+          userId: data.userId ?? uid,
+        } as Session;
+      });
 
-  const getSessionsForMonth = useCallback((year: number, month: number) => {
-    return sessions.filter(s => {
-      const sessionDate = new Date(s.date);
-      return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
+      hasSyncedOnce.current = true;
+      setSessions(remote);
     });
-  }, [sessions]);
+
+    return () => unsub();
+  }, [uid, setSessions]);
+
+  const addSession = useCallback(
+    async (date: string) => {
+      const id = crypto.randomUUID();
+      const newSession: Session = {
+        id,
+        date,
+        completed: true,
+        userId: uid ?? "current",
+      };
+
+      // Optimistic UI
+      setSessions((prev) => [newSession, ...prev]);
+
+      if (uid) {
+        await setDoc(
+          doc(sessionsCol(uid), id),
+          {
+            date,
+            completed: true,
+            userId: uid,
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+
+      return newSession;
+    },
+    [uid, setSessions]
+  );
+
+  const removeSession = useCallback(
+    async (id: string) => {
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+
+      if (uid) {
+        await deleteDoc(doc(sessionsCol(uid), id));
+      }
+    },
+    [uid, setSessions]
+  );
+
+  const hasSessionOnDate = useCallback(
+    (date: string) => sessions.some((s) => s.date === date),
+    [sessions]
+  );
+
+  const getSessionsForMonth = useCallback(
+    (year: number, month: number) =>
+      sessions.filter((s) => {
+        const d = new Date(s.date);
+        return d.getFullYear() === year && d.getMonth() === month;
+      }),
+    [sessions]
+  );
 
   const getCurrentStreak = useCallback(() => {
     if (sessions.length === 0) return 0;
-    
+
     const sortedDates = [...sessions]
-      .map(s => s.date)
+      .map((s) => s.date)
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-    
+
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
-    // Vérifier si la dernière séance est aujourd'hui ou hier
+
     const lastSessionDate = new Date(sortedDates[0]);
     lastSessionDate.setHours(0, 0, 0, 0);
-    
-    if (lastSessionDate.getTime() !== today.getTime() && 
-        lastSessionDate.getTime() !== yesterday.getTime()) {
+
+    if (
+      lastSessionDate.getTime() !== today.getTime() &&
+      lastSessionDate.getTime() !== yesterday.getTime()
+    ) {
       return 0;
     }
-    
-    // Calculer le streak
+
     let checkDate = lastSessionDate.getTime() === today.getTime() ? today : yesterday;
-    
+
     for (const dateStr of sortedDates) {
-      const date = new Date(dateStr);
-      date.setHours(0, 0, 0, 0);
-      
-      if (date.getTime() === checkDate.getTime()) {
+      const d = new Date(dateStr);
+      d.setHours(0, 0, 0, 0);
+
+      if (d.getTime() === checkDate.getTime()) {
         streak++;
         checkDate.setDate(checkDate.getDate() - 1);
-      } else if (date.getTime() < checkDate.getTime()) {
+      } else if (d.getTime() < checkDate.getTime()) {
         break;
       }
     }
-    
+
     return streak;
   }, [sessions]);
 
@@ -147,54 +349,142 @@ export function useSessions() {
   };
 }
 
-// Hook pour les exercices
+/**
+ * ==============
+ * ✅ EXERCISES
+ * ==============
+ */
 export function useExercises() {
+  const uid = useFirebaseUid();
   const [exercises, setExercises] = useLocalStorage<Exercise[]>(STORAGE_KEYS.EXERCISES, []);
 
-  // Initialiser les exercices par défaut si vide
+  // 1) init default local (si vide)
   useEffect(() => {
     if (exercises.length === 0) {
-      const defaultExercises: Exercise[] = DEFAULT_EXERCISES.map(ex => ({
+      const defaults: Exercise[] = DEFAULT_EXERCISES.map((ex: any) => ({
         ...ex,
         id: crypto.randomUUID(),
+        isCustom: false,
+        userId: uid ?? "current",
       }));
-      setExercises(defaultExercises);
+      setExercises(defaults);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addExercise = useCallback((name: string, category: Exercise['category']) => {
-    const newExercise: Exercise = {
-      id: crypto.randomUUID(),
-      name,
-      category,
-      isCustom: true,
-      userId: 'current',
-    };
-    setExercises(prev => [...prev, newExercise]);
-    return newExercise;
-  }, [setExercises]);
+  // 2) sync down Firestore
+  useEffect(() => {
+    if (!uid) return;
 
-  const removeExercise = useCallback((id: string) => {
-    setExercises(prev => prev.filter(e => e.id !== id));
-  }, [setExercises]);
+    const q = query(exercisesCol(uid), orderBy("name", "asc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const remote: Exercise[] = snap.docs.map((d) => {
+        const data = d.data() as any;
+        return {
+          id: d.id,
+          name: data.name,
+          category: data.category,
+          isCustom: !!data.isCustom,
+          userId: data.userId ?? uid,
+        } as Exercise;
+      });
+
+      // Si Firestore est vide, on pousse les defaults (une fois)
+      if (remote.length === 0) {
+        (async () => {
+          const defaults: Exercise[] = DEFAULT_EXERCISES.map((ex: any) => ({
+            ...ex,
+            id: crypto.randomUUID(),
+            isCustom: false,
+            userId: uid,
+          }));
+
+          setExercises(defaults);
+
+          // push defaults into Firestore
+          await Promise.all(
+            defaults.map((ex) =>
+              setDoc(
+                doc(exercisesCol(uid), ex.id),
+                {
+                  name: ex.name,
+                  category: ex.category,
+                  isCustom: false,
+                  userId: uid,
+                  createdAt: serverTimestamp(),
+                },
+                { merge: true }
+              )
+            )
+          );
+        })();
+        return;
+      }
+
+      setExercises(remote);
+    });
+
+    return () => unsub();
+  }, [uid, setExercises]);
+
+  const addExercise = useCallback(
+    async (name: string, category: Exercise["category"]) => {
+      const id = crypto.randomUUID();
+      const newExercise: Exercise = {
+        id,
+        name,
+        category,
+        isCustom: true,
+        userId: uid ?? "current",
+      };
+
+      setExercises((prev) => [...prev, newExercise]);
+
+      if (uid) {
+        await setDoc(
+          doc(exercisesCol(uid), id),
+          {
+            name,
+            category,
+            isCustom: true,
+            userId: uid,
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+
+      return newExercise;
+    },
+    [uid, setExercises]
+  );
+
+  const removeExercise = useCallback(
+    async (id: string) => {
+      setExercises((prev) => prev.filter((e) => e.id !== id));
+      if (uid) {
+        await deleteDoc(doc(exercisesCol(uid), id));
+      }
+    },
+    [uid, setExercises]
+  );
 
   const getExercisesByCategory = useCallback(() => {
     const grouped: Record<string, Exercise[]> = {};
-    exercises.forEach(exercise => {
-      if (!grouped[exercise.category]) {
-        grouped[exercise.category] = [];
-      }
-      grouped[exercise.category].push(exercise);
+    exercises.forEach((ex) => {
+      if (!grouped[ex.category]) grouped[ex.category] = [];
+      grouped[ex.category].push(ex);
     });
     return grouped;
   }, [exercises]);
 
-  const searchExercises = useCallback((query: string) => {
-    const lowerQuery = query.toLowerCase();
-    return exercises.filter(e => 
-      e.name.toLowerCase().includes(lowerQuery)
-    );
-  }, [exercises]);
+  const searchExercises = useCallback(
+    (q: string) => {
+      const lower = q.toLowerCase();
+      return exercises.filter((e) => e.name.toLowerCase().includes(lower));
+    },
+    [exercises]
+  );
 
   return {
     exercises,
@@ -205,75 +495,141 @@ export function useExercises() {
   };
 }
 
-// Hook pour les performances
+/**
+ * ==============
+ * ✅ PERFORMANCES
+ * ==============
+ */
 export function usePerformances() {
-  const [performances, setPerformances] = useLocalStorage<Performance[]>(STORAGE_KEYS.PERFORMANCES, []);
+  const uid = useFirebaseUid();
+  const [performances, setPerformances] = useLocalStorage<Performance[]>(
+    STORAGE_KEYS.PERFORMANCES,
+    []
+  );
 
-  const addPerformance = useCallback((performance: Omit<Performance, 'id'>) => {
-    const newPerformance: Performance = {
-      ...performance,
-      id: crypto.randomUUID(),
-    };
-    setPerformances(prev => [...prev, newPerformance]);
-    return newPerformance;
-  }, [setPerformances]);
+  // sync down
+  useEffect(() => {
+    if (!uid) return;
 
-  const removePerformance = useCallback((id: string) => {
-    setPerformances(prev => prev.filter(p => p.id !== id));
-  }, [setPerformances]);
-
-  const getPerformancesByExercise = useCallback((exerciseId: string) => {
-    return performances
-      .filter(p => p.exerciseId === exerciseId)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [performances]);
-
-  const getLastPerformance = useCallback((exerciseId: string) => {
-    const exercisePerformances = performances
-      .filter(p => p.exerciseId === exerciseId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return exercisePerformances[0] || null;
-  }, [performances]);
-
-  const getPerformancesByDateRange = useCallback((exerciseId: string, startDate: string, endDate: string) => {
-    return performances
-      .filter(p => 
-        p.exerciseId === exerciseId && 
-        p.date >= startDate && 
-        p.date <= endDate
-      )
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [performances]);
-
-  const getExerciseStats = useCallback((exerciseId: string) => {
-    const exercisePerformances = performances.filter(p => p.exerciseId === exerciseId);
-    
-    if (exercisePerformances.length === 0) {
-      return { maxWeight: 0, totalVolume: 0, prCount: 0, averageReps: 0 };
-    }
-
-    const maxWeight = Math.max(...exercisePerformances.map(p => p.weight || 0));
-    const totalVolume = exercisePerformances.reduce((sum, p) => {
-      return sum + ((p.weight || 0) * (p.sets || 1) * (p.reps || 1));
-    }, 0);
-    
-    // Compter les records personnels (performances qui sont des maxima)
-    let prCount = 0;
-    let currentMax = 0;
-    exercisePerformances
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .forEach(p => {
-        const weight = p.weight || 0;
-        if (weight > currentMax) {
-          currentMax = weight;
-          prCount++;
-        }
+    const q = query(performancesCol(uid), orderBy("date", "asc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const remote: Performance[] = snap.docs.map((d) => {
+        const data = d.data() as any;
+        return {
+          id: d.id,
+          ...data,
+        } as Performance;
       });
 
-    const averageReps = exercisePerformances.reduce((sum, p) => sum + (p.reps || 0), 0) / exercisePerformances.length;
+      setPerformances(remote);
+    });
 
-    return { maxWeight, totalVolume, prCount, averageReps: Math.round(averageReps) };
-  }, [performances]);
+    return () => unsub();
+  }, [uid, setPerformances]);
+
+  const addPerformance = useCallback(
+    async (performance: Omit<Performance, "id">) => {
+      console.log("UID in addPerformance:", uid);
+      const id = crypto.randomUUID();
+      const newPerformance: Performance = { ...performance, id };
+
+      setPerformances((prev) => [...prev, newPerformance]);
+
+      if (uid) {
+        const cleanData = Object.fromEntries(
+  Object.entries({
+    ...newPerformance,
+    userId: uid,
+    createdAt: serverTimestamp(),
+  }).filter(([_, v]) => v !== undefined)
+);
+
+await setDoc(
+  doc(performancesCol(uid), newPerformance.id),
+  cleanData,
+  { merge: true }
+);
+      }
+
+      return newPerformance;
+    },
+    [uid, setPerformances]
+  );
+
+  const removePerformance = useCallback(
+    async (id: string) => {
+      setPerformances((prev) => prev.filter((p) => p.id !== id));
+      if (uid) {
+        await deleteDoc(doc(performancesCol(uid), id));
+      }
+    },
+    [uid, setPerformances]
+  );
+
+  const getPerformancesByExercise = useCallback(
+    (exerciseId: string) =>
+      performances
+        .filter((p) => p.exerciseId === exerciseId)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [performances]
+  );
+
+  const getLastPerformance = useCallback(
+    (exerciseId: string) => {
+      const arr = performances
+        .filter((p) => p.exerciseId === exerciseId)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return arr[0] || null;
+    },
+    [performances]
+  );
+
+  const getPerformancesByDateRange = useCallback(
+    (exerciseId: string, startDate: string, endDate: string) =>
+      performances
+        .filter((p) => p.exerciseId === exerciseId && p.date >= startDate && p.date <= endDate)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [performances]
+  );
+
+  const getExerciseStats = useCallback(
+    (exerciseId: string) => {
+      const exPerf = performances.filter((p) => p.exerciseId === exerciseId);
+
+      if (exPerf.length === 0) {
+        return { maxWeight: 0, totalVolume: 0, prCount: 0, averageReps: 0 };
+      }
+
+      const maxWeight = Math.max(...exPerf.map((p) => p.weight || 0));
+      const totalVolume = exPerf.reduce((sum, p) => {
+        return sum + (p.weight || 0) * (p.sets || 1) * (p.reps || 1);
+      }, 0);
+
+      let prCount = 0;
+      let currentMax = 0;
+      exPerf
+        .slice()
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .forEach((p) => {
+          const w = p.weight || 0;
+          if (w > currentMax) {
+            currentMax = w;
+            prCount++;
+          }
+        });
+
+      const averageReps =
+        exPerf.reduce((sum, p) => sum + (p.reps || 0), 0) / exPerf.length;
+
+      return {
+        maxWeight,
+        totalVolume,
+        prCount,
+        averageReps: Math.round(averageReps),
+      };
+    },
+    [performances]
+  );
 
   return {
     performances,
