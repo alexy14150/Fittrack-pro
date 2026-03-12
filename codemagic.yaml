@@ -11,22 +11,19 @@ workflows:
     scripts:
       - name: Install npm dependencies
         script: |
-          cd application
           npm install
 
       - name: Build web app
         script: |
-          cd application
           npm run build
 
       - name: Sync Capacitor iOS
         script: |
-          cd application
           npx cap sync ios
 
       - name: Install CocoaPods
         script: |
-          cd application/ios/App
+          cd ios/App
           pod install
 
       - name: Build IPA
