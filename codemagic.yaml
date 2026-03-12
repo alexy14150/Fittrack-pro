@@ -5,39 +5,38 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      xcode: latest
       node: 20
+      xcode: latest
 
-   scripts:
-  - name: Install npm dependencies
-    script: |
-      cd application
-      npm install
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd application
+          npm install
 
-  - name: Build web app
-    script: |
-      cd application
-      npm run build
+      - name: Build web app
+        script: |
+          cd application
+          npm run build
 
-  - name: Sync Capacitor iOS
-    script: |
-      cd application
-      npx cap sync ios
+      - name: Sync Capacitor
+        script: |
+          cd application
+          npx cap sync ios
 
-  - name: Install CocoaPods
-    script: |
-      cd application/ios/App
-      pod install
+      - name: Install CocoaPods
+        script: |
+          cd application/ios/App
+          pod install
 
-  - name: Build IPA
-    script: |
-      xcode-project build-ipa \
-        --workspace application/ios/App/App.xcworkspace \
-        --scheme App
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace application/ios/App/App.xcworkspace \
+            --scheme App
 
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
 
     publishing:
       email:
