@@ -9,7 +9,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-    scripts:
+   scripts:
   - name: Install npm dependencies
     script: |
       cd application
@@ -20,7 +20,7 @@ workflows:
       cd application
       npm run build
 
-  - name: Sync Capacitor iOS
+  - name: Sync Capacitor IOS
     script: |
       cd application
       npx cap sync ios
