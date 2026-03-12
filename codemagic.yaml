@@ -3,41 +3,42 @@ workflows:
     name: iOS Capacitor Build
     max_build_duration: 60
     instance_type: mac_mini_m2
+
     environment:
       xcode: latest
       node: 20
-      vars:
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
-        XCODE_SCHEME: "App"
-   scripts:
-  - name: Install npm dependencies
-    script: |
-      cd application
-      npm install
 
-  - name: Build web app
-    script: |
-      cd application
-      npm run build
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          cd application
+          npm install
 
-  - name: Sync Capacitor IOS
-    script: |
-      cd application
-      npx cap sync ios
+      - name: Build web app
+        script: |
+          cd application
+          npm run build
 
-  - name: Install CocoaPods
-    script: |
-      cd application/ios/App
-      pod install
+      - name: Sync Capacitor iOS
+        script: |
+          cd application
+          npx cap sync ios
 
-  - name: Build IPA
-    script: |
-      xcode-project build-ipa \
-        --workspace application/ios/App/App.xcworkspace \
-        --scheme App
+      - name: Install CocoaPods
+        script: |
+          cd application/ios/App
+          pod install
+
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace application/ios/App/App.xcworkspace \
+            --scheme App
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+
     publishing:
       email:
         recipients:
