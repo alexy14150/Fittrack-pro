@@ -5,7 +5,7 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      node: 22
+      node: 20
       xcode: latest
 
     scripts:
@@ -23,11 +23,6 @@ workflows:
         script: |
           cd app
           npx cap sync ios
-
-      - name: Install CocoaPods
-        script: |
-          cd app/ios/App
-          pod install
 
       - name: Build IPA
         script: |
