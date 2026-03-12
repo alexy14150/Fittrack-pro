@@ -8,29 +8,32 @@ workflows:
       xcode: latest
       node: 20
 
-    scripts:
-      - name: Install npm dependencies
-        script: |
-          npm install
+   scripts:
+  - name: Install npm dependencies
+    script: |
+      cd application
+      npm install
 
-      - name: Build web app
-        script: |
-          npm run build
+  - name: Build web app
+    script: |
+      cd application
+      npm run build
 
-      - name: Sync Capacitor iOS
-        script: |
-          npx cap sync ios
+  - name: Sync Capacitor iOS
+    script: |
+      cd application
+      npx cap sync ios
 
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install
+  - name: Install CocoaPods
+    script: |
+      cd application/ios/App
+      pod install
 
-      - name: Build IPA
-        script: |
-          xcode-project build-ipa \
-            --workspace application/ios/App/App.xcworkspace \
-            --scheme App
+  - name: Build IPA
+    script: |
+      xcode-project build-ipa \
+        --workspace application/ios/App/App.xcworkspace \
+        --scheme App
 
     artifacts:
       - build/ios/ipa/*.ipa
