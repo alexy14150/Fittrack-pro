@@ -29,7 +29,7 @@ workflows:
           xcode-project build-ipa \
             --project app/ios/App/App.xcodeproj \
             --scheme App \
-            --export-options-plist export_options.plist
+            --export-method development
 
     artifacts:
       - build/ios/ipa/*.ipa
