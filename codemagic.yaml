@@ -24,20 +24,15 @@ workflows:
           cd app
           npx cap sync ios
 
-      - name: Install CocoaPods
-        script: |
-          cd app/ios
-          pod install
-
       - name: Build IPA
         script: |
-          xcode-project build-ipa 
-            --workspace app/ios/App/App.xcworkspace 
+          xcode-project build-ipa \
+            --project app/ios/App/App.xcodeproj \
             --scheme App
 
     artifacts:
-      - build/ios/ipa/.ipa
-      - /tmp/xcodebuild_logs/.log
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
 
     publishing:
       email:
