@@ -38,11 +38,11 @@ workflows:
     artifacts:
       - build/ios/ipa/*.ipa
 
-    Publishing:
-  app_store_connect:
-    auth: integration
-    submit_to_testflight: true
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
 
-  email:
-    recipients:
-      - alexy6300@gmail.com
+      email:
+        recipients:
+          - alexy6300@gmail.com
