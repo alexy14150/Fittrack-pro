@@ -30,10 +30,10 @@ workflows:
       - name: Build IPA
         script: |
           cp app/ios/App/export_options.plist /Users/builder/export_options.plist
+          xcode-project use-profiles
           xcode-project build-ipa \
             --project app/ios/App/App.xcodeproj \
-            --scheme App \
-            --provisioning-profile-specifier "FitTrackPro_Distribution"
+            --scheme App
 
     artifacts:
       - build/ios/ipa/*.ipa
