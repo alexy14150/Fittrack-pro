@@ -7,9 +7,13 @@ workflows:
     environment:
       node: 22
       xcode: latest
+
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.alexy.fittrackpro
+
+      integrations:
+        app_store_connect: integration
 
     scripts:
       - name: Install dependencies
