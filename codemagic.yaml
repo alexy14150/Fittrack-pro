@@ -44,7 +44,7 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: Codemagic
+        auth: integration
         submit_to_testflight: true
 
       email:
