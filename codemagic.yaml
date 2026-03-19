@@ -31,6 +31,10 @@ workflows:
           cd app
           npx cap sync ios
 
+      - name: Set build number
+        script: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" app/ios/App/App/Info.plist
+
       - name: Build IPA
         script: |
           cp app/ios/App/export_options.plist /Users/builder/export_options.plist
