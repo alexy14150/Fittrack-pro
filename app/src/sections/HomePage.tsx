@@ -125,7 +125,10 @@ export function HomePage({ sessions, onAddSession }: HomePageProps) {
   const isToday = (date: Date) => isSameDay(date, today);
   
   return (
-    <div className="page-enter pb-24">
+    <div
+  className="page-enter pb-24"
+  style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+>
     
   
       {/* Stats Cards */}
