@@ -125,19 +125,7 @@ export function HomePage({ sessions, onAddSession }: HomePageProps) {
   const isToday = (date: Date) => isSameDay(date, today);
   
   return (
-  <div className="page-enter pb-24">
-    <div
-  className="fixed top-0 left-0 right-0 z-50 bg-[#140c22]/95 backdrop-blur-md border-b border-white/5"
-  style={{ paddingTop: "env(safe-area-inset-top)" }}
->
-  <div className="h-14 flex items-center justify-center px-4">
-    <h1 className="text-[20px] font-extrabold tracking-tight text-white">
-      FitTrack <span className="text-[#D4FF90]">Pro</span>
-    </h1>
-  </div>
-</div>
-
-<div style={{ paddingTop: "calc(env(safe-area-inset-top) + 56px)" }}></div>
+  <div className="page-enter pb-24 pt-4">
   
       {/* Stats Cards */}
 <div className="flex gap-1 px-2 mb-10 overflow-x-auto hide-scrollbar">
