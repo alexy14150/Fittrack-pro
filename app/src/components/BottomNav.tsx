@@ -19,7 +19,7 @@ const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-24px)] max-w-md">
-      <div className="flex items-center justify-around h-[72px] rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-xl safe-bottom glass-elevated glass-highlight">
+      <div className="flex items-center justify-around h-[64px] rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-xl safe-bottom glass-elevated glass-highlight">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -29,17 +29,17 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full btn-press',
+                'flex flex-col items-center justify-center flex-1 h-full gap-1 btn-press',
                 isActive ? 'text-[#D4FF90]' : 'text-[#8E8E93]'
               )}
             >
               <Icon 
-                size={24} 
+                size={28} 
                 strokeWidth={isActive ? 2.5 : 2}
                 className="transition-all duration-150"
               />
               <span className={cn(
-                'text-[11px] mt-0.5 font-medium transition-colors duration-150',
+                'text-[12px] font-medium transition-colors duration-150',
                 isActive ? 'text-[#D4FF90]' : 'text-[#8E8E93]'
               )}>
                 {tab.label}
