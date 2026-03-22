@@ -101,18 +101,26 @@ function App() {
       {/* App Header */}
 <header
   className="fixed top-0 left-0 right-0 z-50 bg-[#140c22]/95 backdrop-blur-md border-b border-white/5"
-  style={{ paddingTop: "env(safe-area-inset-top)" }}
 >
-  <div className="max-w-md mx-auto h-14 px-4 flex items-center justify-center">
+  <div
+    className="max-w-md mx-auto flex items-center justify-center px-4"
+    style={{
+      paddingTop: "env(safe-area-inset-top)",
+      height: "calc(env(safe-area-inset-top) + 56px)",
+    }}
+  >
     <div className="text-[20px] font-extrabold tracking-tight text-white">
       FitTrack <span className="text-[#D4FF90]">Pro</span>
     </div>
   </div>
 </header>
-      {/* Main Content */}
-      <main
+
+{/* Main Content */}
+<main
   className="max-w-md mx-auto"
-  style={{ paddingTop: "calc(env(safe-area-inset-top) + 56px)" }}
+  style={{
+    paddingTop: "calc(env(safe-area-inset-top) + 56px)",
+  }}
 >
   {renderPage()}
 </main>
