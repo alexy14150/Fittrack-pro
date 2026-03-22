@@ -18,12 +18,14 @@ const tabs: { id: Tab; label: string; icon: typeof Home }[] = [
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-24px)] max-w-md">
-      <div className="flex items-center justify-around h-[64px] rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-xl safe-bottom glass-elevated glass-highlight">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#140c22]/95 backdrop-blur-xl border-t border-white/10"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="max-w-md mx-auto flex items-center justify-around h-[64px]">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
-          
+
           return (
             <button
               key={tab.id}
@@ -33,8 +35,8 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                 isActive ? 'text-[#D4FF90]' : 'text-[#8E8E93]'
               )}
             >
-              <Icon 
-                size={24} 
+              <Icon
+                size={24}
                 strokeWidth={isActive ? 2.5 : 2}
                 className="transition-all duration-150"
               />
