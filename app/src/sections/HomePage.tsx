@@ -125,7 +125,7 @@ export function HomePage({ sessions, onAddSession }: HomePageProps) {
   const isToday = (date: Date) => isSameDay(date, today);
   
   return (
-  <div className="page-enter pb-24 pt-4">
+  <div className="page-enter pb-24">
   
       {/* Stats Cards */}
 <div className="flex gap-1 px-2 mb-10 overflow-x-auto hide-scrollbar">
