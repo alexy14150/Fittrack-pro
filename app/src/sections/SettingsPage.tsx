@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { getAuth, signOut } from 'firebase/auth';
+import { signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import type { User as UserType } from '@/types';
 import type { LucideIcon } from 'lucide-react';
 
@@ -38,7 +39,10 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
   const [showCreateProfile, setShowCreateProfile] = useState(false);
   const [showClearData, setShowClearData] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
-  
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
+  const [passwordResetError, setPasswordResetError] = useState('');
+
   // Form states
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -49,14 +53,26 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
   const [notifications, setNotifications] = useState(true);
   const [useLbs, setUseLbs] = useState(false);
 
-  // ✅ Vraie déconnexion Firebase
+  // ✅ Déconnexion Firebase
   const handleSignOut = async () => {
     try {
-      const auth = getAuth();
       await signOut(auth);
-      onDeleteUser(); // reset l'état local après déconnexion
+      onDeleteUser();
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
+    }
+  };
+
+  // ✅ Réinitialisation du mot de passe par email
+  const handlePasswordReset = async () => {
+    if (!user?.email) return;
+    setPasswordResetError('');
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      setPasswordResetSent(true);
+    } catch (error: any) {
+      setPasswordResetError('Une erreur est survenue. Veuillez réessayer.');
+      console.error('Erreur reset password:', error);
     }
   };
   
@@ -84,7 +100,6 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
     setShowDeleteAccount(false);
   };
   
-  // Settings sections
   const settingsGroups: SettingsGroup[] = [
     {
       title: 'Profil',
@@ -98,7 +113,11 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
         {
           icon: Lock,
           label: 'Changer le mot de passe',
-          action: () => {},
+          action: () => {
+            setPasswordResetSent(false);
+            setPasswordResetError('');
+            setShowPasswordReset(true);
+          },
           showChevron: true,
         },
       ],
@@ -149,7 +168,7 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
         },
         {
           icon: Trash2,
-          label: 'Supprimer l\'historique',
+          label: "Supprimer l'historique",
           action: () => setShowClearData(true),
           showChevron: true,
           danger: true,
@@ -162,7 +181,7 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
         {
           icon: LogOut,
           label: 'Déconnexion',
-          action: handleSignOut, // ✅ Firebase signOut
+          action: handleSignOut,
           showChevron: true,
           danger: true,
         },
@@ -251,7 +270,6 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
               {group.items.map((item, itemIndex) => {
                 const Icon = item.icon;
                 return (
-                  // ✅ Un seul div avec onClick, sans div intérieur dupliqué
                   <div
                     key={itemIndex}
                     onClick={!('toggle' in item) ? item.action : undefined}
@@ -261,11 +279,9 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
                       itemIndex !== group.items.length - 1 && 'border-b border-white/10'
                     )}
                   >
-                    <Icon 
-                      size={20} 
-                      className={cn(
-                        item.danger ? 'text-[#FF453A]' : 'text-[#8E8E93]'
-                      )} 
+                    <Icon
+                      size={20}
+                      className={cn(item.danger ? 'text-[#FF453A]' : 'text-[#8E8E93]')}
                     />
                     <span className={cn(
                       'text-[17px] flex-1',
@@ -273,11 +289,11 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
                     )}>
                       {item.label}
                     </span>
-                    
+
                     {'toggle' in item ? (
                       <div onClick={(e) => e.stopPropagation()}>
-                        <Switch 
-                          checked={item.toggle} 
+                        <Switch
+                          checked={item.toggle}
                           onCheckedChange={item.onToggle}
                           className="data-[state=checked]:bg-[#D4FF90]"
                         />
@@ -297,6 +313,66 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
           </div>
         ))}
       </div>
+
+      {/* Password Reset Modal */}
+      <Dialog open={showPasswordReset} onOpenChange={(open) => {
+        setShowPasswordReset(open);
+        if (!open) {
+          setPasswordResetSent(false);
+          setPasswordResetError('');
+        }
+      }}>
+        <DialogContent className="bg-[#1C1C1E] border-[#38383A] text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white">
+              Changer le mot de passe
+            </DialogTitle>
+          </DialogHeader>
+          {passwordResetSent ? (
+            <div className="mt-4 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#D4FF90]/20 flex items-center justify-center mx-auto">
+                <span className="text-3xl">✉️</span>
+              </div>
+              <p className="text-[15px] text-white">Email envoyé !</p>
+              <p className="text-[13px] text-[#8E8E93]">
+                Un lien de réinitialisation a été envoyé à{' '}
+                <span className="text-white">{user?.email}</span>.
+                Vérifiez votre boîte mail.
+              </p>
+              <Button
+                onClick={() => setShowPasswordReset(false)}
+                className="w-full h-12 rounded-xl font-medium text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082]"
+              >
+                Fermer
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <p className="text-[15px] text-[#8E8E93]">
+                Un email de réinitialisation sera envoyé à{' '}
+                <span className="text-white">{user?.email}</span>.
+              </p>
+              {passwordResetError && (
+                <p className="text-[13px] text-[#FF453A]">{passwordResetError}</p>
+              )}
+              <div className="flex gap-3 mt-2">
+                <Button
+                  onClick={() => setShowPasswordReset(false)}
+                  className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#2C2C2E] text-white hover:bg-[#38383A]"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={handlePasswordReset}
+                  className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082]"
+                >
+                  Envoyer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       
       {/* Edit Profile Modal */}
       <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
