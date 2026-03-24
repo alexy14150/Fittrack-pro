@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { User as UserType } from '@/types';
 import type { LucideIcon } from 'lucide-react';
@@ -30,7 +30,7 @@ interface SettingsPageProps {
   user: UserType | null;
   onCreateUser: (name: string, email: string) => void;
   onUpdateUser: (updates: Partial<UserType>) => void;
-  onDeleteUser: () => void;
+  onDeleteUser: () => void; // ← géré dans App.tsx (signOut + reload)
   onClearData: () => void;
 }
 
@@ -47,21 +47,11 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
   const [email, setEmail] = useState(user?.email || '');
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  
+
   const [notifications, setNotifications] = useState(true);
   const [useLbs, setUseLbs] = useState(false);
 
-  // ✅ Déconnexion Firebase + reset état local via onDeleteUser (géré dans App.tsx)
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      onDeleteUser();
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-    }
-  };
-
-  // ✅ Réinitialisation du mot de passe par email
+  // ✅ Réinitialisation mot de passe
   const handlePasswordReset = async () => {
     if (!user?.email) return;
     setPasswordResetError('');
@@ -70,34 +60,33 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
       setPasswordResetSent(true);
     } catch (error: any) {
       setPasswordResetError('Une erreur est survenue. Veuillez réessayer.');
-      console.error('Erreur reset password:', error);
     }
   };
-  
+
   const handleSaveProfile = () => {
     if (name.trim()) {
       onUpdateUser({ name: name.trim(), email: email.trim() });
       setShowEditProfile(false);
     }
   };
-  
+
   const handleCreateProfile = () => {
     if (newName.trim() && newEmail.trim()) {
       onCreateUser(newName.trim(), newEmail.trim());
       setShowCreateProfile(false);
     }
   };
-  
+
   const handleClearData = () => {
     onClearData();
     setShowClearData(false);
   };
-  
+
   const handleDeleteAccount = () => {
     onDeleteUser();
     setShowDeleteAccount(false);
   };
-  
+
   const settingsGroups: SettingsGroup[] = [
     {
       title: 'Profil',
@@ -179,21 +168,21 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
         {
           icon: LogOut,
           label: 'Déconnexion',
-          action: handleSignOut,
+          action: onDeleteUser, // ✅ délégué à App.tsx
           showChevron: true,
           danger: true,
         },
       ],
     },
   ];
-  
+
   return (
     <div className="page-enter pb-24">
       <header className="px-5 pt-6 pb-4">
         <h1 className="text-[34px] font-bold text-white leading-tight">Réglages</h1>
         <p className="text-[15px] text-[#8E8E93] mt-1">Gérez votre compte et vos préférences</p>
       </header>
-      
+
       <div className="px-5 mb-6">
         {user ? (
           <div className="bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl p-5 glass-elevated glass-highlight shadow-[0_18px_60px_rgba(0,0,0,0.45)]">
@@ -227,7 +216,7 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
           </div>
         )}
       </div>
-      
+
       <div className="px-5 mb-6">
         <div className="bg-gradient-to-r from-[#D4FF90] to-[#32D74B] rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-2">

@@ -19,25 +19,20 @@ type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [isSigningOut, setIsSigningOut] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [blockAnonymous, setBlockAnonymous] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser && !isSigningOut) {
-        // Pas de user ET pas en train de se déconnecter → connexion anonyme
+      if (!firebaseUser && !blockAnonymous) {
         await signInAnonymously(auth);
-      } else if (firebaseUser) {
-        setIsLoggedIn(!firebaseUser.isAnonymous);
-        if (!firebaseUser.isAnonymous) {
-          await setDoc(doc(db, "users", firebaseUser.uid), {
-            createdAt: new Date(),
-          }, { merge: true });
-        }
+      } else if (firebaseUser && !firebaseUser.isAnonymous) {
+        await setDoc(doc(db, "users", firebaseUser.uid), {
+          createdAt: new Date(),
+        }, { merge: true });
       }
     });
     return () => unsub();
-  }, [isSigningOut]);
+  }, [blockAnonymous]);
 
   // Data hooks
   const { user, createUser, updateUser, deleteUser } = useUser();
@@ -45,29 +40,34 @@ function App() {
   const { exercises, addExercise } = useExercises();
   const { performances, addPerformance } = usePerformances();
 
-  // ✅ Déconnexion complète
+  // ✅ Déconnexion complète compatible iOS Capacitor
   const handleSignOut = async () => {
     try {
-      setIsSigningOut(true);    // empêche la reconnexion anonyme
-      await signOut(auth);      // déconnecte Firebase
-      deleteUser();             // nettoie localStorage
-      // Recharge l'app proprement après 300ms
+      setBlockAnonymous(true);
+      await signOut(auth);
+      deleteUser();
+      // Vider tout le localStorage fittrack
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('fittrack_')) localStorage.removeItem(k);
+      });
+      // Attendre un tick puis recharger
       setTimeout(() => {
-        window.location.reload();
-      }, 300);
-    } catch (error) {
+        setBlockAnonymous(false);
+        window.location.href = window.location.origin;
+      }, 500);
+    } catch (error: any) {
       console.error('Erreur déconnexion:', error);
-      setIsSigningOut(false);
+      setBlockAnonymous(false);
     }
   };
-  
+
   // Clear all data
   const handleClearData = () => {
     localStorage.removeItem('fittrack_sessions');
     localStorage.removeItem('fittrack_performances');
     window.location.reload();
   };
-  
+
   // Render current page
   const renderPage = () => {
     switch (activeTab) {
@@ -115,7 +115,7 @@ function App() {
         return null;
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-[radial-gradient(80%_60%_at_50%_0%,rgba(70,40,120,0.25),transparent_60%),linear-gradient(180deg,#120B20_0%,#1A1233_45%,#261A44_100%)]">
 
@@ -143,7 +143,7 @@ function App() {
       >
         {renderPage()}
       </main>
-      
+
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
