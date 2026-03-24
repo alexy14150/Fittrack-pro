@@ -11,7 +11,7 @@ import { useUser, useSessions, useExercises, usePerformances } from "@/hooks/use
 import type { ExerciseCategory } from "@/types";
 
 import { auth } from "@/lib/firebase";
-import { signInAnonymously, onAuthStateChanged, signOut } from "firebase/auth";
+import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -19,20 +19,19 @@ type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [blockAnonymous, setBlockAnonymous] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser && !blockAnonymous) {
+      if (!firebaseUser) {
         await signInAnonymously(auth);
-      } else if (firebaseUser && !firebaseUser.isAnonymous) {
+      } else if (!firebaseUser.isAnonymous) {
         await setDoc(doc(db, "users", firebaseUser.uid), {
           createdAt: new Date(),
         }, { merge: true });
       }
     });
     return () => unsub();
-  }, [blockAnonymous]);
+  }, []);
 
   // Data hooks
   const { user, createUser, updateUser, deleteUser } = useUser();
@@ -40,25 +39,16 @@ function App() {
   const { exercises, addExercise } = useExercises();
   const { performances, addPerformance } = usePerformances();
 
-  // ✅ Déconnexion complète compatible iOS Capacitor
-  const handleSignOut = async () => {
-    try {
-      setBlockAnonymous(true);
-      await signOut(auth);
-      deleteUser();
-      // Vider tout le localStorage fittrack
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith('fittrack_')) localStorage.removeItem(k);
-      });
-      // ✅ Utilise l'API native Capacitor pour fermer/relancer l'app sur iOS
-      const { App: CapApp } = await import('@capacitor/app');
-      await CapApp.exitApp();
-    } catch (error: any) {
-      console.error('Erreur déconnexion:', error);
-      // Fallback web si Capacitor non dispo
-      setBlockAnonymous(false);
-      window.location.href = window.location.origin;
-    }
+  // ✅ Déconnexion — uniquement via React state (pas de vraie auth Firebase)
+  const handleSignOut = () => {
+    // Vider tout le localStorage fittrack
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('fittrack_')) localStorage.removeItem(k);
+    });
+    // Reset le user dans le state React
+    deleteUser();
+    // Retourner à l'accueil
+    setActiveTab('home');
   };
 
   // Clear all data
