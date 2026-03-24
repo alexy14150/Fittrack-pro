@@ -43,17 +43,15 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
   const [passwordResetSent, setPasswordResetSent] = useState(false);
   const [passwordResetError, setPasswordResetError] = useState('');
 
-  // Form states
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   
-  // Settings states
   const [notifications, setNotifications] = useState(true);
   const [useLbs, setUseLbs] = useState(false);
 
-  // ✅ Déconnexion Firebase
+  // ✅ Déconnexion Firebase + reset état local via onDeleteUser (géré dans App.tsx)
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -191,25 +189,17 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
   
   return (
     <div className="page-enter pb-24">
-      {/* Header */}
       <header className="px-5 pt-6 pb-4">
-        <h1 className="text-[34px] font-bold text-white leading-tight">
-          Réglages
-        </h1>
-        <p className="text-[15px] text-[#8E8E93] mt-1">
-          Gérez votre compte et vos préférences
-        </p>
+        <h1 className="text-[34px] font-bold text-white leading-tight">Réglages</h1>
+        <p className="text-[15px] text-[#8E8E93] mt-1">Gérez votre compte et vos préférences</p>
       </header>
       
-      {/* Profile Card */}
       <div className="px-5 mb-6">
         {user ? (
           <div className="bg-white/10 backdrop-blur-2xl border border-white/10 rounded-2xl p-5 glass-elevated glass-highlight shadow-[0_18px_60px_rgba(0,0,0,0.45)]">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D4FF90] to-[#32D74B] flex items-center justify-center shadow-lg">
-                <span className="text-2xl font-bold text-black">
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
+                <span className="text-2xl font-bold text-black">{user.name.charAt(0).toUpperCase()}</span>
               </div>
               <div className="flex-1">
                 <p className="text-[20px] font-semibold text-white">{user.name}</p>
@@ -225,9 +215,7 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
               </div>
               <div className="flex-1">
                 <p className="text-[17px] text-white font-medium mb-1">Pas de compte</p>
-                <p className="text-[15px] text-white/60 mb-3">
-                  Créez un compte pour sauvegarder vos données
-                </p>
+                <p className="text-[15px] text-white/60 mb-3">Créez un compte pour sauvegarder vos données</p>
                 <Button
                   onClick={() => setShowCreateProfile(true)}
                   className="h-9 px-4 rounded-xl bg-[#D4FF90]/90 text-black hover:bg-[#D4FF90] font-medium btn-press shadow-md"
@@ -240,7 +228,6 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
         )}
       </div>
       
-      {/* Premium Banner */}
       <div className="px-5 mb-6">
         <div className="bg-gradient-to-r from-[#D4FF90] to-[#32D74B] rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-2">
@@ -259,7 +246,6 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
         Abonnement mensuel ou annuel. Annulable à tout moment depuis l'App Store.
       </p>
 
-      {/* Settings Groups */}
       <div className="px-5 space-y-6">
         {settingsGroups.map((group, groupIndex) => (
           <div key={groupIndex}>
@@ -279,17 +265,10 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
                       itemIndex !== group.items.length - 1 && 'border-b border-white/10'
                     )}
                   >
-                    <Icon
-                      size={20}
-                      className={cn(item.danger ? 'text-[#FF453A]' : 'text-[#8E8E93]')}
-                    />
-                    <span className={cn(
-                      'text-[17px] flex-1',
-                      item.danger ? 'text-[#FF453A]' : 'text-white'
-                    )}>
+                    <Icon size={20} className={cn(item.danger ? 'text-[#FF453A]' : 'text-[#8E8E93]')} />
+                    <span className={cn('text-[17px] flex-1', item.danger ? 'text-[#FF453A]' : 'text-white')}>
                       {item.label}
                     </span>
-
                     {'toggle' in item ? (
                       <div onClick={(e) => e.stopPropagation()}>
                         <Switch
@@ -317,16 +296,11 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
       {/* Password Reset Modal */}
       <Dialog open={showPasswordReset} onOpenChange={(open) => {
         setShowPasswordReset(open);
-        if (!open) {
-          setPasswordResetSent(false);
-          setPasswordResetError('');
-        }
+        if (!open) { setPasswordResetSent(false); setPasswordResetError(''); }
       }}>
         <DialogContent className="bg-[#1C1C1E] border-[#38383A] text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">
-              Changer le mot de passe
-            </DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">Changer le mot de passe</DialogTitle>
           </DialogHeader>
           {passwordResetSent ? (
             <div className="mt-4 text-center space-y-4">
@@ -335,175 +309,95 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
               </div>
               <p className="text-[15px] text-white">Email envoyé !</p>
               <p className="text-[13px] text-[#8E8E93]">
-                Un lien de réinitialisation a été envoyé à{' '}
-                <span className="text-white">{user?.email}</span>.
-                Vérifiez votre boîte mail.
+                Un lien de réinitialisation a été envoyé à <span className="text-white">{user?.email}</span>.
               </p>
-              <Button
-                onClick={() => setShowPasswordReset(false)}
-                className="w-full h-12 rounded-xl font-medium text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082]"
-              >
+              <Button onClick={() => setShowPasswordReset(false)} className="w-full h-12 rounded-xl font-medium text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082]">
                 Fermer
               </Button>
             </div>
           ) : (
             <div className="mt-4 space-y-4">
               <p className="text-[15px] text-[#8E8E93]">
-                Un email de réinitialisation sera envoyé à{' '}
-                <span className="text-white">{user?.email}</span>.
+                Un email de réinitialisation sera envoyé à <span className="text-white">{user?.email}</span>.
               </p>
-              {passwordResetError && (
-                <p className="text-[13px] text-[#FF453A]">{passwordResetError}</p>
-              )}
+              {passwordResetError && <p className="text-[13px] text-[#FF453A]">{passwordResetError}</p>}
               <div className="flex gap-3 mt-2">
-                <Button
-                  onClick={() => setShowPasswordReset(false)}
-                  className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#2C2C2E] text-white hover:bg-[#38383A]"
-                >
-                  Annuler
-                </Button>
-                <Button
-                  onClick={handlePasswordReset}
-                  className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082]"
-                >
-                  Envoyer
-                </Button>
+                <Button onClick={() => setShowPasswordReset(false)} className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#2C2C2E] text-white hover:bg-[#38383A]">Annuler</Button>
+                <Button onClick={handlePasswordReset} className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082]">Envoyer</Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Profile Modal */}
       <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
         <DialogContent className="bg-[#1C1C1E] border-[#38383A] text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">
-              Modifier le profil
-            </DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">Modifier le profil</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
               <label className="text-[13px] text-[#8E8E93] mb-1.5 block">Nom</label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Votre nom"
-                className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]"
-              />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Votre nom" className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]" />
             </div>
             <div>
               <label className="text-[13px] text-[#8E8E93] mb-1.5 block">Email</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre@email.com"
-                className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]"
-              />
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="votre@email.com" className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]" />
             </div>
-            <Button
-              onClick={handleSaveProfile}
-              disabled={!name.trim()}
-              className="w-full h-14 rounded-xl font-semibold text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082] btn-press mt-6 disabled:opacity-50"
-            >
+            <Button onClick={handleSaveProfile} disabled={!name.trim()} className="w-full h-14 rounded-xl font-semibold text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082] btn-press mt-6 disabled:opacity-50">
               Enregistrer
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Create Profile Modal */}
       <Dialog open={showCreateProfile} onOpenChange={setShowCreateProfile}>
         <DialogContent className="bg-[#1C1C1E] border-[#38383A] text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">
-              Créer un compte
-            </DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">Créer un compte</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
               <label className="text-[13px] text-[#8E8E93] mb-1.5 block">Nom</label>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Votre nom"
-                className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]"
-              />
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Votre nom" className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]" />
             </div>
             <div>
               <label className="text-[13px] text-[#8E8E93] mb-1.5 block">Email</label>
-              <Input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="votre@email.com"
-                className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]"
-              />
+              <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="votre@email.com" className="h-12 bg-[#2C2C2E] border-0 rounded-xl text-white focus-visible:ring-[#D4FF90]" />
             </div>
-            <Button
-              onClick={handleCreateProfile}
-              disabled={!newName.trim() || !newEmail.trim()}
-              className="w-full h-14 rounded-xl font-semibold text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082] btn-press mt-6 disabled:opacity-50"
-            >
+            <Button onClick={handleCreateProfile} disabled={!newName.trim() || !newEmail.trim()} className="w-full h-14 rounded-xl font-semibold text-[17px] bg-[#D4FF90] text-black hover:bg-[#c5f082] btn-press mt-6 disabled:opacity-50">
               Créer le compte
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Clear Data Confirmation */}
       <Dialog open={showClearData} onOpenChange={setShowClearData}>
         <DialogContent className="bg-[#1C1C1E] border-[#38383A] text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">
-              Supprimer l'historique ?
-            </DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">Supprimer l'historique ?</DialogTitle>
           </DialogHeader>
-          <p className="text-[15px] text-[#8E8E93] mt-2">
-            Cette action supprimera toutes vos performances enregistrées. Cette action est irréversible.
-          </p>
+          <p className="text-[15px] text-[#8E8E93] mt-2">Cette action supprimera toutes vos performances enregistrées. Cette action est irréversible.</p>
           <div className="flex gap-3 mt-6">
-            <Button
-              onClick={() => setShowClearData(false)}
-              className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#2C2C2E] text-white hover:bg-[#38383A]"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleClearData}
-              className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#FF453A] text-white hover:bg-[#ff5a4f]"
-            >
-              Supprimer
-            </Button>
+            <Button onClick={() => setShowClearData(false)} className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#2C2C2E] text-white hover:bg-[#38383A]">Annuler</Button>
+            <Button onClick={handleClearData} className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#FF453A] text-white hover:bg-[#ff5a4f]">Supprimer</Button>
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete Account Confirmation */}
       <Dialog open={showDeleteAccount} onOpenChange={setShowDeleteAccount}>
         <DialogContent className="bg-[#1C1C1E] border-[#38383A] text-white max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">
-              Supprimer le compte ?
-            </DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">Supprimer le compte ?</DialogTitle>
           </DialogHeader>
-          <p className="text-[15px] text-[#8E8E93] mt-2">
-            Cette action supprimera définitivement votre compte et toutes vos données.
-          </p>
+          <p className="text-[15px] text-[#8E8E93] mt-2">Cette action supprimera définitivement votre compte et toutes vos données.</p>
           <div className="flex gap-3 mt-6">
-            <Button
-              onClick={() => setShowDeleteAccount(false)}
-              className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#2C2C2E] text-white hover:bg-[#38383A]"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleDeleteAccount}
-              className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#FF453A] text-white hover:bg-[#ff5a4f]"
-            >
-              Supprimer
-            </Button>
+            <Button onClick={() => setShowDeleteAccount(false)} className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#2C2C2E] text-white hover:bg-[#38383A]">Annuler</Button>
+            <Button onClick={handleDeleteAccount} className="flex-1 h-12 rounded-xl font-medium text-[17px] bg-[#FF453A] text-white hover:bg-[#ff5a4f]">Supprimer</Button>
           </div>
         </DialogContent>
       </Dialog>
