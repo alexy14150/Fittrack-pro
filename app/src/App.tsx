@@ -50,14 +50,14 @@ function App() {
       Object.keys(localStorage).forEach(k => {
         if (k.startsWith('fittrack_')) localStorage.removeItem(k);
       });
-      // Attendre un tick puis recharger
-      setTimeout(() => {
-        setBlockAnonymous(false);
-        window.location.href = window.location.origin;
-      }, 500);
+      // ✅ Utilise l'API native Capacitor pour fermer/relancer l'app sur iOS
+      const { App: CapApp } = await import('@capacitor/app');
+      await CapApp.exitApp();
     } catch (error: any) {
       console.error('Erreur déconnexion:', error);
+      // Fallback web si Capacitor non dispo
       setBlockAnonymous(false);
+      window.location.href = window.location.origin;
     }
   };
 
