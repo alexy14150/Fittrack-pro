@@ -11,7 +11,7 @@ import { useUser, useSessions, useExercises, usePerformances } from "@/hooks/use
 import type { ExerciseCategory } from "@/types";
 
 import { auth } from "@/lib/firebase";
-import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { signInAnonymously, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -19,41 +19,53 @@ type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [manualSignOut, setManualSignOut] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser && !manualSignOut) {
-        // Pas de user ET pas de déconnexion manuelle → connexion anonyme
+      if (!firebaseUser && !isSigningOut) {
+        // Pas de user ET pas en train de se déconnecter → connexion anonyme
         await signInAnonymously(auth);
-      } else if (firebaseUser && !firebaseUser.isAnonymous) {
-        // User connecté avec email/password → sync Firestore
-        await setDoc(doc(db, "users", firebaseUser.uid), {
-          createdAt: new Date(),
-        });
+      } else if (firebaseUser) {
+        setIsLoggedIn(!firebaseUser.isAnonymous);
+        if (!firebaseUser.isAnonymous) {
+          await setDoc(doc(db, "users", firebaseUser.uid), {
+            createdAt: new Date(),
+          }, { merge: true });
+        }
       }
     });
-
     return () => unsub();
-  }, [manualSignOut]);
+  }, [isSigningOut]);
 
   // Data hooks
   const { user, createUser, updateUser, deleteUser } = useUser();
   const { sessions, addSession } = useSessions();
   const { exercises, addExercise } = useExercises();
   const { performances, addPerformance } = usePerformances();
+
+  // ✅ Déconnexion complète
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);    // empêche la reconnexion anonyme
+      await signOut(auth);      // déconnecte Firebase
+      deleteUser();             // nettoie localStorage
+      // Recharge l'app proprement après 300ms
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+    } catch (error) {
+      console.error('Erreur déconnexion:', error);
+      setIsSigningOut(false);
+    }
+  };
   
   // Clear all data
   const handleClearData = () => {
     localStorage.removeItem('fittrack_sessions');
     localStorage.removeItem('fittrack_performances');
     window.location.reload();
-  };
-
-  // Handler déconnexion — appelé depuis SettingsPage
-  const handleSignOut = () => {
-    setManualSignOut(true);
-    deleteUser();
   };
   
   // Render current page
