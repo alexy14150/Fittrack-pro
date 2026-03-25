@@ -53,12 +53,25 @@ export function OnboardingPage({ onCreateUser }: OnboardingPageProps) {
               Nom
             </label>
             <div className="relative">
-              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-              <Input
+              <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 z-10" />
+              <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Votre prénom"
-                className="h-14 bg-white/8 border border-white/10 rounded-2xl text-white pl-11 text-[17px] focus-visible:ring-[#D4FF90] focus-visible:border-[#D4FF90]/50 placeholder:text-white/25"
+                style={{
+                  background: '#2C2C2E',
+                  color: '#FFFFFF',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '16px',
+                  height: '56px',
+                  paddingLeft: '44px',
+                  paddingRight: '16px',
+                  fontSize: '17px',
+                  width: '100%',
+                  outline: 'none',
+                  WebkitTextFillColor: '#FFFFFF',
+                }}
+                className="placeholder:text-white/30 focus:border-[#D4FF90]/50"
               />
             </div>
           </div>
@@ -68,13 +81,26 @@ export function OnboardingPage({ onCreateUser }: OnboardingPageProps) {
               Email
             </label>
             <div className="relative">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-              <Input
+              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 z-10" />
+              <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre@email.com"
-                className="h-14 bg-white/8 border border-white/10 rounded-2xl text-white pl-11 text-[17px] focus-visible:ring-[#D4FF90] focus-visible:border-[#D4FF90]/50 placeholder:text-white/25"
+                style={{
+                  background: '#2C2C2E',
+                  color: '#FFFFFF',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '16px',
+                  height: '56px',
+                  paddingLeft: '44px',
+                  paddingRight: '16px',
+                  fontSize: '17px',
+                  width: '100%',
+                  outline: 'none',
+                  WebkitTextFillColor: '#FFFFFF',
+                }}
+                className="placeholder:text-white/30 focus:border-[#D4FF90]/50"
               />
             </div>
           </div>
