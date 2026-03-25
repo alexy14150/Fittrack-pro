@@ -20,21 +20,16 @@ type Tab = 'home' | 'exercises' | 'progress' | 'coach' | 'settings';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      const isLoggedOut = localStorage.getItem('fittrack_logged_out') === 'true';
-
-      if (!firebaseUser && !isLoggedOut) {
+      if (!firebaseUser) {
         await signInAnonymously(auth);
-      } else if (firebaseUser && !firebaseUser.isAnonymous) {
+      } else if (!firebaseUser.isAnonymous) {
         await setDoc(doc(db, "users", firebaseUser.uid), {
           createdAt: new Date(),
         }, { merge: true });
       }
-
-      setAuthReady(true);
     });
     return () => unsub();
   }, []);
@@ -45,13 +40,16 @@ function App() {
   const { exercises, addExercise } = useExercises();
   const { performances, addPerformance } = usePerformances();
 
-  // ✅ Déconnexion — affiche l'onboarding en vidant le user
+  // ✅ Déconnexion volontaire — pose le flag puis reload
   const handleSignOut = async () => {
+    // Poser le flag AVANT de vider le storage
     localStorage.setItem('fittrack_logged_out', 'true');
+    // Vider les données fittrack
     Object.keys(localStorage).forEach(k => {
-      if (k.startsWith('fittrack_')) localStorage.removeItem(k);
+      if (k.startsWith('fittrack_') && k !== 'fittrack_logged_out') {
+        localStorage.removeItem(k);
+      }
     });
-    localStorage.setItem('fittrack_logged_out', 'true');
     await deleteUser();
     window.location.reload();
   };
@@ -60,14 +58,15 @@ function App() {
   const handleDeleteAccount = async () => {
     localStorage.setItem('fittrack_logged_out', 'true');
     Object.keys(localStorage).forEach(k => {
-      if (k.startsWith('fittrack_')) localStorage.removeItem(k);
+      if (k.startsWith('fittrack_') && k !== 'fittrack_logged_out') {
+        localStorage.removeItem(k);
+      }
     });
-    localStorage.setItem('fittrack_logged_out', 'true');
     await deleteUser();
     window.location.reload();
   };
 
-  // ✅ Création de compte depuis l'onboarding — retire le flag logged_out
+  // ✅ Création depuis onboarding — retire le flag logged_out
   const handleCreateUser = async (name: string, email: string) => {
     localStorage.removeItem('fittrack_logged_out');
     await createUser(name, email);
@@ -80,21 +79,10 @@ function App() {
     window.location.reload();
   };
 
-  // Attendre que Firebase soit prêt
-  if (!authReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center"
-        style={{ background: 'linear-gradient(180deg,#120B20 0%,#1A1233 45%,#261A44 100%)' }}>
-        <div className="w-8 h-8 rounded-full border-2 border-[#D4FF90] border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  // ✅ Si pas de user → écran onboarding
-  if (!user) {
-    return (
-      <OnboardingPage onCreateUser={handleCreateUser} />
-    );
+  // ✅ Afficher l'onboarding UNIQUEMENT après déconnexion volontaire
+  const isLoggedOut = localStorage.getItem('fittrack_logged_out') === 'true';
+  if (isLoggedOut) {
+    return <OnboardingPage onCreateUser={handleCreateUser} />;
   }
 
   // Render current page
