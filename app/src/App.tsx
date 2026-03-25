@@ -22,9 +22,12 @@ function App() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
+      // ✅ Ne pas reconnecter si l'utilisateur s'est déconnecté volontairement
+      const isLoggedOut = localStorage.getItem('fittrack_logged_out') === 'true';
+
+      if (!firebaseUser && !isLoggedOut) {
         await signInAnonymously(auth);
-      } else if (!firebaseUser.isAnonymous) {
+      } else if (firebaseUser && !firebaseUser.isAnonymous) {
         await setDoc(doc(db, "users", firebaseUser.uid), {
           createdAt: new Date(),
         }, { merge: true });
@@ -39,25 +42,31 @@ function App() {
   const { exercises, addExercise } = useExercises();
   const { performances, addPerformance } = usePerformances();
 
-  // ✅ Déconnexion — vide le storage et reload pour couper les listeners Firestore
+  // ✅ Déconnexion — marque logged_out pour bloquer la reconnexion anonyme Firebase
   const handleSignOut = async () => {
-    // 1. Vider tout le localStorage fittrack
+    // 1. Marquer la déconnexion volontaire AVANT tout
+    localStorage.setItem('fittrack_logged_out', 'true');
+    // 2. Vider tout le localStorage fittrack
     Object.keys(localStorage).forEach(k => {
       if (k.startsWith('fittrack_')) localStorage.removeItem(k);
     });
-    // 2. Supprimer le user
+    // 3. Remettre le flag (effacé par l'étape 2)
+    localStorage.setItem('fittrack_logged_out', 'true');
+    // 4. Supprimer le user Firestore
     await deleteUser();
-    // 3. Reload complet pour couper tous les onSnapshot Firestore
+    // 5. Reload complet pour couper tous les onSnapshot Firestore
     window.location.reload();
   };
 
   // ✅ Suppression de compte — action séparée de la déconnexion
   const handleDeleteAccount = async () => {
+    localStorage.setItem('fittrack_logged_out', 'true');
     Object.keys(localStorage).forEach(k => {
       if (k.startsWith('fittrack_')) localStorage.removeItem(k);
     });
+    localStorage.setItem('fittrack_logged_out', 'true');
     await deleteUser();
-    setActiveTab('home');
+    window.location.reload();
   };
 
   // Clear all data
