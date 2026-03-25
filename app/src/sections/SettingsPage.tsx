@@ -30,11 +30,12 @@ interface SettingsPageProps {
   user: UserType | null;
   onCreateUser: (name: string, email: string) => void;
   onUpdateUser: (updates: Partial<UserType>) => void;
-  onDeleteUser: () => void; // ← géré dans App.tsx (signOut + reload)
+  onDeleteUser: () => void;
+  onSignOut: () => void; // ✅ prop séparée pour la déconnexion
   onClearData: () => void;
 }
 
-export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, onClearData }: SettingsPageProps) {
+export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, onSignOut, onClearData }: SettingsPageProps) {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showCreateProfile, setShowCreateProfile] = useState(false);
   const [showClearData, setShowClearData] = useState(false);
@@ -168,7 +169,7 @@ export function SettingsPage({ user, onCreateUser, onUpdateUser, onDeleteUser, o
         {
           icon: LogOut,
           label: 'Déconnexion',
-          action: onDeleteUser, // ✅ délégué à App.tsx
+          action: onSignOut, // ✅ corrigé — était onDeleteUser
           showChevron: true,
           danger: true,
         },

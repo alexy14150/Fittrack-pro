@@ -39,15 +39,24 @@ function App() {
   const { exercises, addExercise } = useExercises();
   const { performances, addPerformance } = usePerformances();
 
-  // ✅ Déconnexion — uniquement via React state (pas de vraie auth Firebase)
-  const handleSignOut = () => {
-    // Vider tout le localStorage fittrack
+  // ✅ Déconnexion — attend la suppression du user AVANT de naviguer
+  const handleSignOut = async () => {
+    // 1. Vider tout le localStorage fittrack
     Object.keys(localStorage).forEach(k => {
       if (k.startsWith('fittrack_')) localStorage.removeItem(k);
     });
-    // Reset le user dans le state React
-    deleteUser();
-    // Retourner à l'accueil
+    // 2. Supprimer le user du state et attendre
+    await deleteUser();
+    // 3. Naviguer en dernier
+    setActiveTab('home');
+  };
+
+  // ✅ Suppression de compte — action séparée de la déconnexion
+  const handleDeleteAccount = async () => {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('fittrack_')) localStorage.removeItem(k);
+    });
+    await deleteUser();
     setActiveTab('home');
   };
 
@@ -90,7 +99,8 @@ function App() {
             user={user}
             onCreateUser={createUser}
             onUpdateUser={updateUser}
-            onDeleteUser={handleSignOut}
+            onDeleteUser={handleDeleteAccount}
+            onSignOut={handleSignOut}
             onClearData={handleClearData}
           />
         );
