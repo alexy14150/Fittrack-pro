@@ -39,16 +39,16 @@ function App() {
   const { exercises, addExercise } = useExercises();
   const { performances, addPerformance } = usePerformances();
 
-  // ✅ Déconnexion — attend la suppression du user AVANT de naviguer
+  // ✅ Déconnexion — vide le storage et reload pour couper les listeners Firestore
   const handleSignOut = async () => {
     // 1. Vider tout le localStorage fittrack
     Object.keys(localStorage).forEach(k => {
       if (k.startsWith('fittrack_')) localStorage.removeItem(k);
     });
-    // 2. Supprimer le user du state et attendre
+    // 2. Supprimer le user
     await deleteUser();
-    // 3. Naviguer en dernier
-    setActiveTab('home');
+    // 3. Reload complet pour couper tous les onSnapshot Firestore
+    window.location.reload();
   };
 
   // ✅ Suppression de compte — action séparée de la déconnexion
